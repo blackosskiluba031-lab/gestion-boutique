@@ -1,225 +1,271 @@
 <?php
-// login.php - Connexion pour chaque boutique à son espace dédié
+// login.php — v2 : connexion par username (ou email)
 
 declare(strict_types=1);
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+if (session_status() === PHP_SESSION_NONE) session_start();
 
-// Si déjà connecté, rediriger vers le tableau de bord
 if (isset($_SESSION['current_store_id'])) {
-    header('Location: dashboard.php');
-    exit;
+    header('Location: dashboard.php'); exit;
 }
 
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/models/Store.php';
 
-$pdo = require __DIR__ . '/config/database.php';
+$pdo        = require __DIR__ . '/config/database.php';
 $storeModel = new Store($pdo);
 
-$error = null;
+$error   = null;
+$blocked = isset($_GET['blocked']);
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-    $email = trim($_POST['email'] ?? '');
-    $password = trim($_POST['password'] ?? '');
+    $identifier = trim($_POST['identifier'] ?? '');
+    $password   = trim($_POST['password'] ?? '');
 
-    if (empty($email) || empty($password)) {
-        $error = "Veuillez saisir votre email et votre mot de passe.";
+    if (empty($identifier) || empty($password)) {
+        $error = "Veuillez renseigner votre identifiant et votre mot de passe.";
     } else {
-        $store = $storeModel->authenticate($email, $password);
+        $store = $storeModel->authenticate($identifier, $password);
         if ($store) {
-            $_SESSION['current_store_id'] = (int)$store['id'];
-            $_SESSION['store_name'] = $store['name'];
-            $_SESSION['store_email'] = $store['email'];
-            header('Location: dashboard.php');
-            exit;
+            if (!$store['is_active']) {
+                $error = "Votre espace boutique a été suspendu. Contactez l'administrateur.";
+            } else {
+                $_SESSION['current_store_id'] = (int) $store['id'];
+                $_SESSION['store_name']       = $store['name'];
+                $_SESSION['store_username']   = $store['username'];
+                header('Location: dashboard.php'); exit;
+            }
         } else {
-            $error = "Identifiants invalides. Vérifiez l'email et le mot de passe.";
+            $error = "Identifiant ou mot de passe incorrect. Vérifiez et réessayez.";
         }
     }
 }
 ?>
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-100">
+<html lang="fr" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion Espace Boutique | POSSIBILITY TECH</title>
-    <!-- Tailwind CSS CDN -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Connexion | POSSIBILITY TECH</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="assets/images/logo_icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
-                    }
-                }
-            }
+            theme: { extend: { colors: { brand: { 50:'#eff6ff',100:'#dbeafe',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' } } } }
         }
     </script>
-    <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans antialiased text-slate-800 bg-gradient-to-br from-slate-100 via-brand-50/30 to-slate-200">
+    <style>
+        body { background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 50%, #f0f4ff 100%); }
+        .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        input:focus { outline: none; }
 
-    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <!-- Logo Officiel Possibility Tech -->
-        <div class="inline-block p-3 bg-white rounded-3xl shadow-lg border border-slate-200/80 mb-4 hover:scale-105 transition-transform duration-200">
-            <img src="assets/images/logo.png" alt="POSSIBILITY TECH Logo" class="h-16 w-auto mx-auto object-contain">
+        /* PWA install banner */
+        #pwa-banner { transition: transform 0.4s ease, opacity 0.4s ease; }
+        #pwa-banner.hidden { transform: translateY(-100%); opacity: 0; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased text-slate-800">
+
+    <!-- ===== BANNIÈRE PWA INSTALL ===== -->
+    <div id="pwa-banner" class="hidden fixed top-0 left-0 right-0 z-50 bg-brand-700 text-white px-4 py-3 flex items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-3">
+            <img src="assets/images/logo_icon.png" alt="" class="w-8 h-8 rounded-lg">
+            <div>
+                <p class="text-xs font-black">📱 Installer l'application</p>
+                <p class="text-[11px] opacity-80">Accédez à POSSIBILITY TECH depuis votre écran d'accueil</p>
+            </div>
         </div>
-        
-        <h2 class="text-2xl font-black tracking-tight text-slate-900">
-            POSSIBILITY TECH
-        </h2>
-        <p class="mt-1 text-xs text-slate-500 font-semibold tracking-wide uppercase">
-            Système Multi-Boutique & Point de Vente
-        </p>
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="pwa-install-btn" class="px-3 py-1.5 bg-white text-brand-700 text-xs font-black rounded-lg shadow-sm active:scale-95 transition-transform">
+                Installer
+            </button>
+            <button id="pwa-dismiss-btn" class="p-1.5 opacity-70 hover:opacity-100">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+        </div>
     </div>
 
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="bg-white py-8 px-6 shadow-xl rounded-3xl sm:px-10 border border-slate-200/80">
-            
-            <div class="mb-6 text-center border-b border-slate-100 pb-4">
-                <h3 class="text-base font-bold text-slate-800">Accéder à votre Espace Boutique</h3>
-                <p class="text-xs text-slate-400 mt-1">Connectez-vous avec vos identifiants pour gérer votre stock et votre caisse.</p>
-            </div>
+    <!-- ===== CORPS DE LA PAGE ===== -->
+    <div class="flex-1 flex flex-col items-center justify-center px-4 py-10 safe-area-inset">
 
-            <?php if ($error): ?>
-                <div class="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-2.5 text-xs font-semibold text-red-700 animate-in fade-in">
-                    <i class="fa-solid fa-triangle-exclamation text-red-500 text-sm"></i>
-                    <span><?= htmlspecialchars($error) ?></span>
-                </div>
+        <!-- Logo -->
+        <div class="text-center mb-6">
+            <div class="inline-block p-3 bg-white rounded-3xl shadow-xl border border-slate-200/80 mb-4 hover:scale-105 transition-transform duration-300">
+                <img src="assets/images/logo_icon.png" alt="POSSIBILITY TECH" class="h-20 w-20 mx-auto object-contain">
+            </div>
+            <h1 class="text-2xl font-black tracking-tight text-slate-900">POSSIBILITY TECH</h1>
+            <p class="mt-1 text-xs text-slate-500 font-semibold tracking-widest uppercase">Gestion Multi-Boutique & Point de Vente</p>
+        </div>
+
+        <!-- Card de connexion -->
+        <div class="glass-card w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200/80 p-6 sm:p-8">
+
+            <?php if ($blocked): ?>
+            <div class="mb-5 p-3.5 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-2.5 text-xs font-semibold text-orange-800">
+                <i class="fa-solid fa-ban text-orange-500 mt-0.5 flex-shrink-0"></i>
+                <span>Votre compte a été suspendu. Contactez le support POSSIBILITY TECH.</span>
+            </div>
             <?php endif; ?>
 
+            <?php if ($error): ?>
+            <div class="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-2.5 text-xs font-semibold text-red-700">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5 flex-shrink-0"></i>
+                <span><?= htmlspecialchars($error) ?></span>
+            </div>
+            <?php endif; ?>
+
+            <h2 class="text-sm font-black text-slate-800 mb-5 text-center">Accéder à votre Espace Boutique</h2>
+
             <form method="POST" action="login.php" class="space-y-4">
-                
+
+                <!-- Identifiant (username) -->
                 <div>
-                    <label for="email" class="block text-xs font-bold text-slate-700 mb-1">
-                        Adresse Email de la boutique :
+                    <label for="identifier" class="block text-xs font-bold text-slate-700 mb-1.5">
+                        <i class="fa-solid fa-user text-brand-500 mr-1"></i>
+                        Identifiant de boutique
                     </label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                            <i class="fa-solid fa-envelope text-xs"></i>
+                            <i class="fa-solid fa-at text-sm"></i>
                         </div>
-                        <input 
-                            id="email" 
-                            name="email" 
-                            type="email" 
-                            required 
+                        <input
+                            id="identifier"
+                            name="identifier"
+                            type="text"
+                            required
                             autofocus
-                            placeholder="ex: prestige@possibility.tech"
-                            value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-                            class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                            autocomplete="username"
+                            autocapitalize="none"
+                            placeholder="ex: prestige"
+                            value="<?= htmlspecialchars($_POST['identifier'] ?? '') ?>"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-200 transition-all"
                         >
                     </div>
+                    <p class="mt-1 text-[10px] text-slate-400">Votre identifiant sans espace (ex : ma_boutique)</p>
                 </div>
 
+                <!-- Mot de passe -->
                 <div>
-                    <label for="password" class="block text-xs font-bold text-slate-700 mb-1">
-                        Mot de passe :
+                    <label for="password" class="block text-xs font-bold text-slate-700 mb-1.5">
+                        <i class="fa-solid fa-lock text-brand-500 mr-1"></i>
+                        Mot de passe
                     </label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                            <i class="fa-solid fa-lock text-xs"></i>
+                            <i class="fa-solid fa-lock text-sm"></i>
                         </div>
-                        <input 
-                            id="password" 
-                            name="password" 
-                            type="password" 
-                            required 
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            required
+                            autocomplete="current-password"
                             placeholder="••••••••"
-                            class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                            class="w-full pl-10 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-200 transition-all"
                         >
-                        <button 
-                            type="button" 
-                            onclick="togglePasswordVisibility()" 
-                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 text-xs"
-                        >
-                            <i id="eyeIcon" class="fa-solid fa-eye"></i>
+                        <button type="button" onclick="togglePwd()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+                            <i id="pwd-eye" class="fa-solid fa-eye text-sm"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="pt-2">
-                    <button 
-                        type="submit" 
-                        class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                    >
-                        <i class="fa-solid fa-right-to-bracket"></i>
-                        <span>Se Connecter à la Boutique</span>
-                    </button>
-                </div>
+                <!-- Bouton connexion -->
+                <button
+                    type="submit"
+                    class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 active:scale-[0.98] text-white text-sm font-black rounded-xl shadow-lg shadow-brand-600/30 flex items-center justify-center gap-2 transition-all mt-2"
+                >
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Connexion
+                </button>
             </form>
 
-            <!-- Démo Rapide Local : Comptes de test -->
-            <div class="mt-6 pt-5 border-t border-slate-100">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block text-center mb-2">Comptes de Test Local</span>
-                <div class="grid grid-cols-2 gap-2 text-left">
-                    <button 
-                        type="button"
-                        onclick="fillDemo('prestige@possibility.tech', 'password123')"
-                        class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[11px] transition-colors"
-                    >
-                        <strong class="block text-slate-800 font-bold truncate">🏪 Boutique 1</strong>
-                        <span class="text-[10px] text-slate-500 block truncate">prestige@...</span>
-                        <span class="text-[9px] text-brand-600 font-mono">password123</span>
+            <!-- Démos rapides -->
+            <div class="mt-5 pt-4 border-t border-slate-100">
+                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wide text-center mb-3">Comptes de démonstration</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="fillDemo('prestige','password123')" class="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 flex items-center gap-1.5 transition-colors active:scale-95">
+                        <i class="fa-solid fa-store text-blue-500 text-[11px]"></i>
+                        Boutique Prestige
                     </button>
-                    <button 
-                        type="button"
-                        onclick="fillDemo('express@possibility.tech', 'password123')"
-                        class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[11px] transition-colors"
-                    >
-                        <strong class="block text-slate-800 font-bold truncate">🏪 Boutique 2</strong>
-                        <span class="text-[10px] text-slate-500 block truncate">express@...</span>
-                        <span class="text-[9px] text-brand-600 font-mono">password123</span>
+                    <button onclick="fillDemo('express','password123')" class="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200 flex items-center gap-1.5 transition-colors active:scale-95">
+                        <i class="fa-solid fa-store text-emerald-500 text-[11px]"></i>
+                        Express Sud
                     </button>
                 </div>
             </div>
 
-            <!-- Inscription Nouvelle Boutique -->
-            <div class="mt-6 text-center">
+            <!-- Lien inscription -->
+            <div class="mt-4 text-center">
                 <p class="text-xs text-slate-500">
-                    Vous gérez une nouvelle boutique ? 
-                    <a href="register.php" class="font-bold text-brand-600 hover:text-brand-800 hover:underline">
-                        Créer un compte boutique
-                    </a>
+                    Pas encore de compte ?
+                    <a href="register.php" class="font-black text-brand-600 hover:text-brand-800 hover:underline ml-1">Créer une boutique</a>
                 </p>
             </div>
-
         </div>
 
-        <p class="mt-6 text-center text-xs text-slate-400">
-            &copy; <?= date('Y') ?> <strong>POSSIBILITY TECH</strong> • Tous droits réservés.
+        <p class="mt-6 text-[10px] text-slate-400 text-center">
+            &copy; <?= date('Y') ?> POSSIBILITY TECH — Solutions Logicielles &amp; Technologiques
         </p>
     </div>
 
+    <!-- Service Worker + PWA -->
     <script>
-        function fillDemo(email, pass) {
-            document.getElementById('email').value = email;
-            document.getElementById('password').value = pass;
+        // Fill demo credentials
+        function fillDemo(username, password) {
+            document.getElementById('identifier').value = username;
+            document.getElementById('password').value = password;
+            document.getElementById('password').closest('form').submit();
         }
 
-        function togglePasswordVisibility() {
-            const input = document.getElementById('password');
-            const icon = document.getElementById('eyeIcon');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fa-solid fa-eye-slash';
+        // Toggle password visibility
+        function togglePwd() {
+            const inp = document.getElementById('password');
+            const eye = document.getElementById('pwd-eye');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                eye.className = 'fa-solid fa-eye-slash text-sm';
             } else {
-                input.type = 'password';
-                icon.className = 'fa-solid fa-eye';
+                inp.type = 'password';
+                eye.className = 'fa-solid fa-eye text-sm';
             }
+        }
+
+        // ── PWA Install Prompt ──
+        let deferredPrompt = null;
+        const banner = document.getElementById('pwa-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+        // Show banner if not dismissed before
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!localStorage.getItem('pwa_dismissed')) {
+                banner.classList.remove('hidden');
+            }
+        });
+
+        installBtn?.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') banner.classList.add('hidden');
+            deferredPrompt = null;
+        });
+
+        dismissBtn?.addEventListener('click', () => {
+            banner.classList.add('hidden');
+            localStorage.setItem('pwa_dismissed', '1');
+        });
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
         }
     </script>
 </body>

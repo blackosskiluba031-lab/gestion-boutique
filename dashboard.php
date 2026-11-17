@@ -195,7 +195,10 @@ function fmtFC(float $amount): string {
 <html lang="fr" class="h-full bg-[#f4f7fb]">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Tableau de Bord | <?= htmlspecialchars($appName) ?> • <?= htmlspecialchars($currentStoreName) ?></title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -283,45 +286,105 @@ function fmtFC(float $amount): string {
         require __DIR__ . '/includes/header_nav.php'; 
     ?>
 
+    <?php if ($trialExpired): ?>
+    <!-- ===================== ÉCRAN DE BLOCAGE PÉRIODE D'ESSAI ===================== -->
+    <div class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
+            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-clock-rotate-left text-4xl text-red-500"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-900 mb-2">Période d'essai terminée</h2>
+            <p class="text-sm text-slate-500 mb-6 leading-relaxed">
+                Vos <strong>15 jours d'essai gratuit</strong> sont écoulés.<br>
+                Pour continuer à utiliser <strong>POSSIBILITY TECH</strong> et accéder à votre boutique, veuillez contacter notre équipe pour activer votre abonnement.
+            </p>
+
+            <!-- Bouton WhatsApp -->
+            <a href="https://wa.me/<?= $waContact ?>?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20POSSIBILITY%20TECH%20pour%20la%20boutique%20%22<?= urlencode($currentStoreName) ?>%22"
+               target="_blank"
+               class="w-full py-4 px-6 bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-black text-base rounded-2xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-3 transition-all mb-3">
+                <i class="fa-brands fa-whatsapp text-2xl"></i>
+                Payer mon abonnement
+            </a>
+            <p class="text-xs text-slate-400">
+                <i class="fa-solid fa-phone mr-1"></i>WhatsApp : <?= $waContact ?>
+            </p>
+
+            <div class="mt-5 pt-4 border-t border-slate-100">
+                <a href="logout.php" class="text-xs text-slate-400 hover:text-red-600 hover:underline font-semibold">
+                    <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Se déconnecter
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!$trialExpired && $trialDaysLeft <= 5 && $trialDaysLeft > 0): ?>
+    <!-- ALERTE : Fin de période d'essai imminente -->
+    <div class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2 text-xs font-semibold text-amber-800">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+            <span>Votre période d'essai expire dans <strong><?= $trialDaysLeft ?> jour<?= $trialDaysLeft > 1 ? 's' : '' ?></strong> !</span>
+        </div>
+        <a href="https://wa.me/<?= $waContact ?>?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20POSSIBILITY%20TECH"
+           target="_blank"
+           class="flex-shrink-0 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-black rounded-lg flex items-center gap-1.5 transition-colors">
+            <i class="fa-brands fa-whatsapp"></i> Abonner maintenant
+        </a>
+    </div>
+    <?php endif; ?>
+
     <!-- Contenu Principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8">
 
         <!-- ================= BANNIÈRE D'ACCUEIL BOUTIQUE ================= -->
-        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-                <div class="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm p-1.5 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    <img src="assets/images/logo.png" alt="POSSIBILITY TECH" class="max-h-full max-w-full object-contain">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white border border-slate-200 shadow-sm p-1 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img src="assets/images/logo_icon.png" alt="POSSIBILITY TECH" class="max-h-full max-w-full object-contain">
                 </div>
                 <div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600">Tableau de Bord Exécutif</span>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            ● Multi-Boutique Connecté
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-brand-600">Tableau de Bord</span>
+                        <?php if (!$trialExpired && $trialEndsAt): ?>
+                        <!-- Compteur essai actif -->
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                            <i class="fa-regular fa-clock text-[9px]"></i>
+                            Essai : <strong id="trial-counter"><?= $trialDaysLeft ?>j</strong> restant<?= $trialDaysLeft > 1 ? 's' : '' ?>
                         </span>
+                        <?php endif; ?>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">● Multi-Boutique</span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
+                    <h1 class="text-lg sm:text-2xl font-black text-slate-900 mt-0.5 leading-tight">
                         <?= htmlspecialchars($currentStoreName) ?>
                     </h1>
-                    <p class="text-xs text-slate-400">
+                    <p class="text-xs text-slate-400 hidden sm:block">
                         Gestion complète, flux de caisse et indicateurs temps réel
                     </p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2.5 w-full sm:w-auto">
-                <a 
-                    href="cashier.php" 
-                    class="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all active:scale-[0.98]"
-                >
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <a href="cashier.php"
+                    class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all active:scale-[0.98]">
                     <i class="fa-solid fa-cash-register"></i>
-                    <span>Caisse & Vente Rapide</span>
+                    <span>Caisse & Vente</span>
                 </a>
+                <?php if (!$trialExpired): ?>
+                <a href="https://wa.me/<?= $waContact ?>?text=Bonjour%2C%20abonnement%20POSSIBILITY%20TECH"
+                   target="_blank"
+                   class="flex-shrink-0 p-2.5 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-2xl flex items-center gap-1.5 transition-colors"
+                   title="Contacter sur WhatsApp">
+                    <i class="fa-brands fa-whatsapp text-base"></i>
+                    <span class="text-xs font-bold hidden sm:inline">Abonnement</span>
+                </a>
+                <?php endif; ?>
             </div>
         </div>
 
 
         <!-- ================= LIGNE 1 : LES 5 CARTES KPIS CONFORMES À L'IMAGE 1 ================= -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <section class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
             
             <!-- CARTE 1 : Clients inscrits (Bleu avec vague et badge pill ↑ +12%) -->
             <div class="mockup-kpi-card">
