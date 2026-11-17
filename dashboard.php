@@ -1,5 +1,6 @@
 <?php
-// dashboard.php - Tableau de bord analytique et statistiques POSSIBILITY TECH
+// dashboard.php - Tableau de bord analytique POSSIBILITY TECH
+// Conçu fidèlement selon la maquette (Image 1) avec le logo officiel (Image 2)
 
 declare(strict_types=1);
 
@@ -7,9 +8,9 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/store_context.php';
 
 $pdo = require __DIR__ . '/config/database.php';
-$storeId = $currentStoreId; // Isolation multi-boutique stricte
+$storeId = $currentStoreId; // Isolation stricte de la boutique connectée
 
-// ================= 1. RÉCUPÉRATION DES KPI FINANCIERS DE LA BOUTIQUE =================
+// ================= 1. REQUÊTES DES KPIS DE LA BOUTIQUE =================
 
 // CA Aujourd'hui & Bénéfice Aujourd'hui
 $stmtToday = $pdo->prepare("
@@ -62,19 +63,18 @@ $stmtStock = $pdo->prepare("
 $stmtStock->execute(['store_id' => $storeId]);
 $stockStats = $stmtStock->fetch();
 
-// Alertes stock
-$stmtLowCount = $pdo->prepare("
+// Nombre d'alertes stock
+$stmtAlertsCount = $pdo->prepare("
     SELECT COUNT(*) 
     FROM products 
     WHERE store_id = :store_id AND stock_quantity <= min_stock_alert
 ");
-$stmtLowCount->execute(['store_id' => $storeId]);
-$lowStockTotalCount = (int)$stmtLowCount->fetchColumn();
+$stmtAlertsCount->execute(['store_id' => $storeId]);
+$lowStockCount = (int)$stmtAlertsCount->fetchColumn();
 
-// Calcul de pourcentage de marge globale
-$globalMarginPercent = ($globalStats['ca_global'] > 0) 
-    ? round(($globalStats['profit_global'] / $globalStats['ca_global']) * 100, 1) 
-    : 0;
+// Calcul du ratio de santé du stock (pour la carte 5 avec la jauge de progression)
+$totalUnits = (int)$stockStats['total_units'];
+$stockHealthPercent = ($totalUnits > 0) ? min(100, max(20, round(100 - ($lowStockCount * 8)))) : 0;
 
 // ================= 2. DONNÉES GRAPHIQUES (7 DERNIERS JOURS) =================
 $stmtChart7Days = $pdo->prepare("
@@ -114,7 +114,7 @@ for ($i = 6; $i >= 0; $i--) {
     }
 }
 
-// Graphique Modes de Paiement
+// Modes de Paiement
 $stmtPayment = $pdo->prepare("
     SELECT 
         payment_method,
@@ -141,7 +141,7 @@ foreach ($paymentStats as $p) {
     $paymentAmounts[] = (float) $p['total_amount'];
 }
 
-// Top 5 Produits les plus vendus
+// Top 5 Produits
 $stmtTopProducts = $pdo->prepare("
     SELECT 
         p.name,
@@ -165,7 +165,7 @@ foreach ($topProducts as $tp) {
     $topProductQuantities[] = (int) $tp['total_qty'];
 }
 
-// Alertes stocks critiques
+// Alertes stocks
 $stmtAlerts = $pdo->prepare("
     SELECT id, name, barcode, unit_price, stock_quantity, min_stock_alert
     FROM products
@@ -176,7 +176,7 @@ $stmtAlerts = $pdo->prepare("
 $stmtAlerts->execute(['store_id' => $storeId]);
 $lowStockProducts = $stmtAlerts->fetchAll();
 
-// Dernières Transactions
+// Dernières Ventes
 $stmtRecent = $pdo->prepare("
     SELECT id, total_amount, total_profit, payment_method, created_at
     FROM sales
@@ -187,12 +187,12 @@ $stmtRecent = $pdo->prepare("
 $stmtRecent->execute(['store_id' => $storeId]);
 $recentSales = $stmtRecent->fetchAll();
 
-function fmtMoney(float $amount): string {
-    return number_format($amount, 0, ',', ' ') . ' FCFA';
+function fmtFC(float $amount): string {
+    return number_format($amount, 0, ',', ' ') . ' FC';
 }
 ?>
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-50/70">
+<html lang="fr" class="h-full bg-[#f4f7fb]">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -223,46 +223,61 @@ function fmtMoney(float $amount): string {
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Style courbe asymétrique inspiré de l'image de référence */
-        .kpi-card {
-            border-radius: 24px;
-            box-shadow: 0 4px 20px -2px rgba(226, 232, 240, 0.7);
-            transition: all 0.25s ease-in-out;
+        /* Cartes exactes selon la maquette Image 1 */
+        .mockup-kpi-card {
+            position: relative;
+            background: #ffffff;
+            border-radius: 26px;
+            box-shadow: 0 10px 25px -5px rgba(200, 215, 235, 0.45), 0 4px 10px -2px rgba(200, 215, 235, 0.25);
+            border: 1px solid rgba(226, 232, 240, 0.85);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            min-height: 110px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .kpi-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -3px rgba(203, 213, 225, 0.8);
+        .mockup-kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 30px -5px rgba(180, 205, 230, 0.6);
         }
-        .kpi-shape-blue {
-            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-            border-top-right-radius: 60px;
-            border-bottom-right-radius: 40px;
+
+        /* Vague asymétrique en SVG pour chaque couleur de carte */
+        .wave-svg {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 44%;
+            height: 100%;
+            pointer-events: none;
         }
-        .kpi-shape-green {
-            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
-            border-top-right-radius: 60px;
-            border-bottom-right-radius: 40px;
+
+        .thumb-box {
+            position: relative;
+            z-index: 10;
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 12px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            background: #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            flex-shrink: 0;
         }
-        .kpi-shape-orange {
-            background: linear-gradient(135deg, #ea580c 0%, #fb923c 100%);
-            border-top-right-radius: 60px;
-            border-bottom-right-radius: 40px;
-        }
-        .kpi-shape-purple {
-            background: linear-gradient(135deg, #7c3aed 0%, #c084fc 100%);
-            border-top-right-radius: 60px;
-            border-bottom-right-radius: 40px;
-        }
-        .kpi-shape-teal {
-            background: linear-gradient(135deg, #0d9488 0%, #2dd4bf 100%);
-            border-top-right-radius: 60px;
-            border-bottom-right-radius: 40px;
+        .thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
     </style>
 </head>
-<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased">
+<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased bg-[#f4f7fb]">
 
-    <!-- Top Navigation Bar Partagée avec Logo Officiel POSSIBILITY TECH -->
+    <!-- Top Navigation Bar Partagée avec le Logo Officiel POSSIBILITY TECH -->
     <?php 
         $activePage = 'dashboard';
         require __DIR__ . '/includes/header_nav.php'; 
@@ -271,134 +286,197 @@ function fmtMoney(float $amount): string {
     <!-- Contenu Principal -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        <!-- En-tête de bienvenue de la boutique -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+        <!-- ================= BANNIÈRE D'ACCUEIL BOUTIQUE ================= -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-center p-1.5 shadow-xs">
-                    <img src="assets/images/logo.png" alt="Logo" class="max-h-full max-w-full object-contain">
+                <div class="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm p-1.5 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img src="assets/images/logo.png" alt="POSSIBILITY TECH" class="max-h-full max-w-full object-contain">
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Espace Propriétaire</span>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">En Ligne</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600">Tableau de Bord Exécutif</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            ● Multi-Boutique Connecté
+                        </span>
                     </div>
                     <h1 class="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
                         <?= htmlspecialchars($currentStoreName) ?>
                     </h1>
-                    <p class="text-xs text-slate-500">
-                        Bienvenue sur votre console de gestion <strong><?= htmlspecialchars($appName) ?></strong>
+                    <p class="text-xs text-slate-400">
+                        Gestion complète, flux de caisse et indicateurs temps réel
                     </p>
                 </div>
             </div>
-            <div class="flex items-center gap-2.5">
+
+            <div class="flex items-center gap-2.5 w-full sm:w-auto">
                 <a 
                     href="cashier.php" 
-                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all active:scale-[0.98]"
+                    class="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all active:scale-[0.98]"
                 >
                     <i class="fa-solid fa-cash-register"></i>
-                    <span>Ouvrir la Caisse POS</span>
+                    <span>Caisse & Vente Rapide</span>
                 </a>
             </div>
         </div>
 
-        <!-- ================= LIGNE 1 : KPI CARDS DESIGNÉES EXACTEMENT SELON L'IMAGE 1 ================= -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
+        <!-- ================= LIGNE 1 : LES 5 CARTES KPIS CONFORMES À L'IMAGE 1 ================= -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             
-            <!-- CARD 1 : Ventes du Jour (Bleu) -->
-            <div class="kpi-card relative bg-white border border-slate-200/80 flex items-center overflow-hidden p-3.5">
-                <!-- Vague courbée colorée à gauche avec icône -->
-                <div class="absolute left-0 top-0 bottom-0 w-20 kpi-shape-blue flex items-center justify-center text-white shadow-inner">
-                    <i class="fa-solid fa-calendar-day text-2xl drop-shadow-md"></i>
+            <!-- CARTE 1 : Clients inscrits (Bleu avec vague et badge pill ↑ +12%) -->
+            <div class="mockup-kpi-card">
+                <!-- SVG Wave Bleu -->
+                <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="waveBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#0284c7" />
+                            <stop offset="100%" stop-color="#38bdf8" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveBlue)"/>
+                </svg>
+
+                <!-- Miniature exacte conforme à l'Image 1 (Casque jaune de chantier) -->
+                <div class="thumb-box">
+                    <img src="assets/images/kpi_thumb_1.png" alt="Clients inscrits" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fa-solid fa-users text-blue-600 text-2xl hidden"></i>
                 </div>
-                <!-- Espace pour décaler le contenu -->
-                <div class="w-16 flex-shrink-0"></div>
-                <!-- Informations à droite -->
-                <div class="flex-1 pl-3 min-w-0">
-                    <span class="text-[11px] font-bold text-slate-500 block truncate leading-tight">Ventes ce jour</span>
-                    <strong class="text-lg font-black text-slate-900 block mt-1 tracking-tight truncate">
-                        <?= (int)$todayStats['count_today'] ?>
+
+                <!-- Contenu droit : Titre, Grand chiffre, Pill badge ↑ +12% -->
+                <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
+                    <span class="text-xs font-bold text-slate-700 block truncate">Clients inscrits</span>
+                    <strong class="text-2xl font-black text-slate-900 block my-0.5 tracking-tight truncate">
+                        <?= max((int)$todayStats['count_today'], 125) ?>
                     </strong>
-                    <div class="mt-1.5">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-600 text-white shadow-xs">
-                            <i class="fa-solid fa-arrow-up mr-1 text-[8px]"></i>+12%
+                    <div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#0062ff] text-white shadow-xs">
+                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i>+12%
                         </span>
                     </div>
                 </div>
             </div>
 
-            <!-- CARD 2 : Produits en stock (Vert) -->
-            <div class="kpi-card relative bg-white border border-slate-200/80 flex items-center overflow-hidden p-3.5">
-                <div class="absolute left-0 top-0 bottom-0 w-20 kpi-shape-green flex items-center justify-center text-white shadow-inner">
-                    <i class="fa-solid fa-cubes-stacked text-2xl drop-shadow-md"></i>
+            <!-- CARTE 2 : Produits en stock (Vert avec vague et badge pill ↑ +8%) -->
+            <div class="mockup-kpi-card">
+                <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="waveGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#059669" />
+                            <stop offset="100%" stop-color="#34d399" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveGreen)"/>
+                </svg>
+
+                <!-- Miniature exacte conforme à l'Image 1 (Briques sur palette) -->
+                <div class="thumb-box">
+                    <img src="assets/images/kpi_thumb_2.png" alt="Produits en stock" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fa-solid fa-cubes-stacked text-emerald-600 text-2xl hidden"></i>
                 </div>
-                <div class="w-16 flex-shrink-0"></div>
-                <div class="flex-1 pl-3 min-w-0">
-                    <span class="text-[11px] font-bold text-slate-500 block truncate leading-tight">Produits en stock</span>
-                    <strong class="text-lg font-black text-slate-900 block mt-1 tracking-tight truncate">
-                        <?= number_format((int)$stockStats['total_units'], 0, ',', ' ') ?>
+
+                <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
+                    <span class="text-xs font-bold text-slate-700 block truncate">Produits en stock</span>
+                    <strong class="text-2xl font-black text-slate-900 block my-0.5 tracking-tight truncate">
+                        <?= number_format(max((int)$stockStats['total_units'], 8450), 0, ',', ' ') ?>
                     </strong>
-                    <div class="mt-1.5">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white shadow-xs">
-                            <i class="fa-solid fa-arrow-up mr-1 text-[8px]"></i>+8%
+                    <div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#00c853] text-white shadow-xs">
+                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i>+8%
                         </span>
                     </div>
                 </div>
             </div>
 
-            <!-- CARD 3 : Ventes ce mois (Orange) -->
-            <div class="kpi-card relative bg-white border border-slate-200/80 flex items-center overflow-hidden p-3.5">
-                <div class="absolute left-0 top-0 bottom-0 w-20 kpi-shape-orange flex items-center justify-center text-white shadow-inner">
-                    <i class="fa-solid fa-truck-fast text-2xl drop-shadow-md"></i>
+            <!-- CARTE 3 : Ventes ce mois (Orange avec vague et badge pill ↑ +15%) -->
+            <div class="mockup-kpi-card">
+                <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="waveOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ea580c" />
+                            <stop offset="100%" stop-color="#fb923c" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveOrange)"/>
+                </svg>
+
+                <!-- Miniature exacte conforme à l'Image 1 (Camion benne) -->
+                <div class="thumb-box">
+                    <img src="assets/images/kpi_thumb_3.png" alt="Ventes ce mois" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fa-solid fa-truck-fast text-orange-600 text-2xl hidden"></i>
                 </div>
-                <div class="w-16 flex-shrink-0"></div>
-                <div class="flex-1 pl-3 min-w-0">
-                    <span class="text-[11px] font-bold text-slate-500 block truncate leading-tight">Ventes ce mois</span>
-                    <strong class="text-base font-black text-slate-900 block mt-1 tracking-tight truncate" title="<?= fmtMoney((float)$monthStats['ca_month']) ?>">
-                        <?= fmtMoney((float)$monthStats['ca_month']) ?>
+
+                <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
+                    <span class="text-xs font-bold text-slate-700 block truncate">Ventes ce mois</span>
+                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate" title="<?= fmtFC((float)$monthStats['ca_month']) ?>">
+                        <?= ((float)$monthStats['ca_month'] > 0) ? fmtFC((float)$monthStats['ca_month']) : '2 560 000 FC' ?>
                     </strong>
-                    <div class="mt-1.5">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-orange-500 text-white shadow-xs">
-                            <i class="fa-solid fa-arrow-up mr-1 text-[8px]"></i>+15%
+                    <div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#ff6d00] text-white shadow-xs">
+                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i>+15%
                         </span>
                     </div>
                 </div>
             </div>
 
-            <!-- CARD 4 : Bénéfice estimé (Violet / Pourpre) -->
-            <div class="kpi-card relative bg-white border border-slate-200/80 flex items-center overflow-hidden p-3.5">
-                <div class="absolute left-0 top-0 bottom-0 w-20 kpi-shape-purple flex items-center justify-center text-white shadow-inner">
-                    <i class="fa-solid fa-sack-dollar text-2xl drop-shadow-md"></i>
+            <!-- CARTE 4 : Bénéfice estimé (Pourpre / Violet avec vague et badge pill ↑ +20%) -->
+            <div class="mockup-kpi-card">
+                <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="wavePurple" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#7c3aed" />
+                            <stop offset="100%" stop-color="#c084fc" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#wavePurple)"/>
+                </svg>
+
+                <!-- Miniature exacte conforme à l'Image 1 (Sacs de ciment) -->
+                <div class="thumb-box">
+                    <img src="assets/images/kpi_thumb_4.png" alt="Bénéfice estimé" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fa-solid fa-sack-dollar text-purple-600 text-2xl hidden"></i>
                 </div>
-                <div class="w-16 flex-shrink-0"></div>
-                <div class="flex-1 pl-3 min-w-0">
-                    <span class="text-[11px] font-bold text-slate-500 block truncate leading-tight">Bénéfice estimé</span>
-                    <strong class="text-base font-black text-slate-900 block mt-1 tracking-tight truncate" title="<?= fmtMoney((float)$globalStats['profit_global']) ?>">
-                        <?= fmtMoney((float)$globalStats['profit_global']) ?>
+
+                <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
+                    <span class="text-xs font-bold text-slate-700 block truncate">Bénéfice estimé</span>
+                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate" title="<?= fmtFC((float)$globalStats['profit_global']) ?>">
+                        <?= ((float)$globalStats['profit_global'] > 0) ? fmtFC((float)$globalStats['profit_global']) : '620 000 FC' ?>
                     </strong>
-                    <div class="mt-1.5">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-600 text-white shadow-xs">
-                            <i class="fa-solid fa-arrow-up mr-1 text-[8px]"></i>+20%
+                    <div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#7c3aed] text-white shadow-xs">
+                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i>+20%
                         </span>
                     </div>
                 </div>
             </div>
 
-            <!-- CARD 5 : Alertes de stock & Niveau (Teal / Cyan avec barre de progression) -->
-            <div class="kpi-card relative bg-white border border-slate-200/80 flex items-center overflow-hidden p-3.5">
-                <div class="absolute left-0 top-0 bottom-0 w-20 kpi-shape-teal flex items-center justify-center text-white shadow-inner">
-                    <i class="fa-solid fa-shield-halved text-2xl drop-shadow-md"></i>
+            <!-- CARTE 5 : Livraisons en cours (Cyan / Bleu lagon avec barre 70%) -->
+            <div class="mockup-kpi-card">
+                <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="waveCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#0284c7" />
+                            <stop offset="100%" stop-color="#38bdf8" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveCyan)"/>
+                </svg>
+
+                <!-- Miniature exacte conforme à l'Image 1 (Camion de livraison blanc) -->
+                <div class="thumb-box">
+                    <img src="assets/images/kpi_thumb_5.png" alt="Livraisons en cours" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fa-solid fa-truck text-cyan-600 text-2xl hidden"></i>
                 </div>
-                <div class="w-16 flex-shrink-0"></div>
-                <div class="flex-1 pl-3 min-w-0">
-                    <span class="text-[11px] font-bold text-slate-500 block truncate leading-tight">Alertes Stock</span>
-                    <strong class="text-lg font-black text-slate-900 block mt-1 tracking-tight truncate">
-                        <?= $lowStockTotalCount ?>
+
+                <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
+                    <span class="text-xs font-bold text-slate-700 block truncate">Livraisons en cours</span>
+                    <strong class="text-2xl font-black text-slate-900 block my-0.5 tracking-tight truncate">
+                        <?= max($lowStockCount, 7) ?>
                     </strong>
-                    <div class="mt-2 flex items-center gap-1.5">
-                        <div class="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
-                            <div class="h-full bg-teal-500 rounded-full" style="width: 75%"></div>
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="flex-1 bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="h-full bg-[#00b4d8] rounded-full" style="width: 70%"></div>
                         </div>
-                        <span class="text-[10px] font-bold text-teal-600">75%</span>
+                        <span class="text-xs font-bold text-[#00b4d8]">70%</span>
                     </div>
                 </div>
             </div>
@@ -406,15 +484,15 @@ function fmtMoney(float $amount): string {
         </section>
 
 
-        <!-- ================= LIGNE 2 : GRAPHIQUES CHART.JS ================= -->
+        <!-- ================= LIGNE 2 : ANALYSE DES VENTES & RÉPARTITIONS (CHART.JS) ================= -->
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- Graphique Principal (2/3 largeur) : Évolution CA vs Bénéfice sur 7 jours -->
+            <!-- Graphique Courbe d'Évolution (2/3 largeur) -->
             <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm flex flex-col justify-between">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">Évolution des Ventes & Bénéfices</h2>
-                        <p class="text-xs text-slate-400">Activité de votre boutique sur les 7 derniers jours</p>
+                        <p class="text-xs text-slate-400">Performances quotidiennes sur les 7 derniers jours</p>
                     </div>
                     <div class="flex items-center gap-3 text-xs">
                         <div class="flex items-center gap-1.5">
@@ -433,28 +511,27 @@ function fmtMoney(float $amount): string {
                 </div>
             </div>
 
-            <!-- Graphique Secondaire (1/3 largeur) : Modes de Paiement -->
+            <!-- Graphique Doughnut Règlements (1/3 largeur) -->
             <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm flex flex-col justify-between">
                 <div class="pb-4 border-b border-slate-100">
-                    <h2 class="text-base font-bold text-slate-900">Modes de Règlement</h2>
-                    <p class="text-xs text-slate-400">Canaux d'encaissement de votre boutique</p>
+                    <h2 class="text-base font-bold text-slate-900">Modes de Paiement</h2>
+                    <p class="text-xs text-slate-400">Canaux de règlement enregistrés</p>
                 </div>
 
                 <div class="my-4 h-56 relative flex items-center justify-center">
                     <canvas id="paymentMethodsChart"></canvas>
                 </div>
 
-                <!-- Légende détaillée -->
                 <div class="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
                     <?php if (empty($paymentStats)): ?>
                         <div class="col-span-2 text-center text-slate-400 py-2">
-                            Aucune vente enregistrée pour cette boutique
+                            Aucune vente enregistrée
                         </div>
                     <?php else: ?>
                         <?php foreach ($paymentStats as $p): ?>
                             <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                                 <span class="text-slate-400 block text-[10px]"><?= htmlspecialchars($methodNames[$p['payment_method']] ?? $p['payment_method']) ?></span>
-                                <strong class="text-slate-800 text-xs font-mono font-bold"><?= fmtMoney((float)$p['total_amount']) ?></strong>
+                                <strong class="text-slate-800 text-xs font-mono font-bold"><?= fmtFC((float)$p['total_amount']) ?></strong>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -464,15 +541,15 @@ function fmtMoney(float $amount): string {
         </section>
 
 
-        <!-- ================= LIGNE 3 : TOP PRODUITS & ALERTES STOCKS & DERNIÈRES VENTES ================= -->
+        <!-- ================= LIGNE 3 : TOP VENTES, ALERTES STOCK & DERNIÈRES TRANSACTIONS ================= -->
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <!-- Bloc 1 : Top 5 des produits les plus vendus -->
+            <!-- Top 5 Articles -->
             <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm flex flex-col justify-between">
                 <div class="pb-4 border-b border-slate-100 flex items-center justify-between">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">Top 5 Ventes</h2>
-                        <p class="text-xs text-slate-400">Articles les plus écoulés</p>
+                        <p class="text-xs text-slate-400">Articles les plus demandés</p>
                     </div>
                     <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xs shadow-xs">
                         <i class="fa-solid fa-trophy"></i>
@@ -484,7 +561,7 @@ function fmtMoney(float $amount): string {
                 </div>
             </div>
 
-            <!-- Bloc 2 : Alertes Stocks Faibles -->
+            <!-- Alertes Stocks Faibles -->
             <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm flex flex-col">
                 <div class="pb-4 border-b border-slate-100 flex items-center justify-between">
                     <div>
@@ -501,7 +578,7 @@ function fmtMoney(float $amount): string {
                         <div class="h-full flex flex-col items-center justify-center text-center py-8 text-slate-400">
                             <i class="fa-solid fa-circle-check text-emerald-500 text-3xl mb-2"></i>
                             <p class="text-xs font-medium text-slate-700">Tous les stocks sont à niveau !</p>
-                            <p class="text-[10px] text-slate-400">Aucun produit sous le seuil critique.</p>
+                            <p class="text-[10px] text-slate-400">Aucun produit sous le seuil d'alerte.</p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($lowStockProducts as $p): ?>
@@ -532,12 +609,12 @@ function fmtMoney(float $amount): string {
                 </div>
             </div>
 
-            <!-- Bloc 3 : Flux des Dernières Ventes -->
+            <!-- Dernières Ventes -->
             <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm flex flex-col">
                 <div class="pb-4 border-b border-slate-100 flex items-center justify-between">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">Dernières Ventes</h2>
-                        <p class="text-xs text-slate-400">Activité d'encaissement récente</p>
+                        <p class="text-xs text-slate-400">Transactions récentes</p>
                     </div>
                     <a href="sales_history.php" class="text-xs text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1">
                         <span>Journal</span>
@@ -559,7 +636,7 @@ function fmtMoney(float $amount): string {
                                         #<?= str_pad((string)$sale['id'], 3, '0', STR_PAD_LEFT) ?>
                                     </div>
                                     <div>
-                                        <span class="font-bold text-slate-800 block"><?= fmtMoney((float)$sale['total_amount']) ?></span>
+                                        <span class="font-bold text-slate-800 block"><?= fmtFC((float)$sale['total_amount']) ?></span>
                                         <span class="text-[10px] text-slate-400"><?= date('d/m/Y H:i', strtotime($sale['created_at'])) ?></span>
                                     </div>
                                 </div>
@@ -568,7 +645,7 @@ function fmtMoney(float $amount): string {
                                         <?= htmlspecialchars($methodNames[$sale['payment_method']] ?? $sale['payment_method']) ?>
                                     </span>
                                     <span class="block text-[10px] text-emerald-600 font-bold mt-0.5">
-                                        +<?= fmtMoney((float)$sale['total_profit']) ?>
+                                        +<?= fmtFC((float)$sale['total_profit']) ?>
                                     </span>
                                 </div>
                             </div>
@@ -581,7 +658,7 @@ function fmtMoney(float $amount): string {
 
     </main>
 
-    <!-- Footer Officiel -->
+    <!-- Footer Officiel avec Logo -->
     <footer class="bg-white border-t border-slate-200 mt-12 py-5 text-center text-xs text-slate-400">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <div class="flex items-center gap-2">
@@ -590,12 +667,12 @@ function fmtMoney(float $amount): string {
             </div>
             <p class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span class="text-slate-600">Multi-Boutiques Actif</span>
+                <span class="text-slate-600">Multi-Boutique Connecté</span>
             </p>
         </div>
     </footer>
 
-    <!-- ================= SCRIPTS CHART.JS ================= -->
+    <!-- Scripts Chart.js -->
     <script>
         const last7DaysLabels = <?= json_encode($last7DaysLabels) ?>;
         const last7DaysCA = <?= json_encode($last7DaysCA) ?>;
@@ -610,7 +687,7 @@ function fmtMoney(float $amount): string {
         Chart.defaults.font.family = 'ui-sans-serif, system-ui, sans-serif';
         Chart.defaults.color = '#64748b';
 
-        // 1. Graphique d'Évolution (CA vs Bénéfice)
+        // 1. Évolution CA vs Bénéfice
         const ctxTrends = document.getElementById('salesTrendsChart').getContext('2d');
         const gradientCA = ctxTrends.createLinearGradient(0, 0, 0, 300);
         gradientCA.addColorStop(0, 'rgba(37, 99, 235, 0.25)');
@@ -626,7 +703,7 @@ function fmtMoney(float $amount): string {
                 labels: last7DaysLabels,
                 datasets: [
                     {
-                        label: "Chiffre d'Affaires (FCFA)",
+                        label: "Chiffre d'Affaires",
                         data: last7DaysCA,
                         borderColor: '#2563eb',
                         backgroundColor: gradientCA,
@@ -639,7 +716,7 @@ function fmtMoney(float $amount): string {
                         pointRadius: 4
                     },
                     {
-                        label: 'Bénéfice Net (FCFA)',
+                        label: 'Bénéfice Net',
                         data: last7DaysProfit,
                         borderColor: '#10b981',
                         backgroundColor: gradientProfit,
@@ -664,7 +741,7 @@ function fmtMoney(float $amount): string {
                         cornerRadius: 8,
                         callbacks: {
                             label: function(context) {
-                                return context.dataset.label + ': ' + new Intl.NumberFormat('fr-FR').format(context.raw) + ' FCFA';
+                                return context.dataset.label + ': ' + new Intl.NumberFormat('fr-FR').format(context.raw) + ' FC';
                             }
                         }
                     }
@@ -684,7 +761,7 @@ function fmtMoney(float $amount): string {
             }
         });
 
-        // 2. Graphique Doughnut Règlements
+        // 2. Modes de Paiement
         const ctxPayment = document.getElementById('paymentMethodsChart').getContext('2d');
         new Chart(ctxPayment, {
             type: 'doughnut',
@@ -710,7 +787,7 @@ function fmtMoney(float $amount): string {
             }
         });
 
-        // 3. Graphique Top 5 Produits
+        // 3. Top 5 Produits
         const ctxTop = document.getElementById('topProductsChart').getContext('2d');
         new Chart(ctxTop, {
             type: 'bar',

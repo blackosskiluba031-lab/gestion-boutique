@@ -21,8 +21,8 @@ if (!isset($activePage)) {
             <div class="flex items-center space-x-3">
                 <a href="dashboard.php" class="flex items-center gap-3 group">
                     <!-- Logo Officiel Possibility Tech -->
-                    <div class="w-10 h-10 rounded-xl bg-white p-1 border border-slate-200 shadow-xs flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
-                        <img src="assets/images/logo.png" alt="POSSIBILITY TECH" class="h-8 w-auto object-contain">
+                    <div class="w-10 h-10 rounded-xl bg-white p-0.5 border border-slate-200 shadow-xs flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+                        <img src="assets/images/logo_icon.png" alt="POSSIBILITY TECH" class="h-9 w-9 object-contain">
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center sm:gap-2">
                         <span class="text-sm sm:text-base font-black tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors uppercase">

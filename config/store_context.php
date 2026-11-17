@@ -28,7 +28,7 @@ $logoPath = "assets/images/logo.png";
 
 // Si authentifié
 if (isset($_SESSION['current_store_id'])) {
-    $currentStoreId = (int)$_SESSION['current_store_id'];
+    $currentStoreId = (int) $_SESSION['current_store_id'];
     $currentStore = $storeModel->getById($currentStoreId);
 
     if (!$currentStore) {
@@ -51,7 +51,7 @@ $availableStores = $storeModel->getAll();
 
 // Mise à jour rapide du nom de la boutique via modal si soumis
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action_update_store_name'])) {
-    $storeIdToUpdate = (int)($_POST['store_id'] ?? $currentStoreId);
+    $storeIdToUpdate = (int) ($_POST['store_id'] ?? $currentStoreId);
     $newName = trim($_POST['store_name'] ?? '');
     if (!empty($newName) && $storeIdToUpdate === $currentStoreId) {
         $storeModel->update($storeIdToUpdate, $newName);
