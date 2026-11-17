@@ -98,6 +98,28 @@ if (!isset($activePage)) {
             </div>
         </div>
     </div>
+
+    <!-- BANDE MENU MOBILE (Visible sur smartphone sous l'en-tête) -->
+    <div class="md:hidden border-t border-slate-200 bg-slate-50/95 px-3 py-2 overflow-x-auto shadow-xs">
+        <div class="flex items-center space-x-2 min-w-max">
+            <a href="dashboard.php" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 <?= $activePage === 'dashboard' ? 'bg-brand-50 text-brand-700 border border-brand-200 shadow-xs' : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100' ?>">
+                <i class="fa-solid fa-chart-line text-[11px] <?= $activePage === 'dashboard' ? 'text-brand-600' : 'text-slate-400' ?>"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="cashier.php" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 <?= $activePage === 'cashier' ? 'bg-brand-50 text-brand-700 border border-brand-200 shadow-xs' : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100' ?>">
+                <i class="fa-solid fa-cash-register text-[11px] <?= $activePage === 'cashier' ? 'text-brand-600' : 'text-slate-400' ?>"></i>
+                <span>Caisse & Vente</span>
+            </a>
+            <a href="products.php" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 <?= $activePage === 'products' ? 'bg-brand-50 text-brand-700 border border-brand-200 shadow-xs' : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100' ?>">
+                <i class="fa-solid fa-boxes-stacked text-[11px] <?= $activePage === 'products' ? 'text-brand-600' : 'text-slate-400' ?>"></i>
+                <span>Stocks & Produits</span>
+            </a>
+            <a href="sales_history.php" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 <?= $activePage === 'sales_history' ? 'bg-brand-50 text-brand-700 border border-brand-200 shadow-xs' : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100' ?>">
+                <i class="fa-solid fa-clock-rotate-left text-[11px] <?= $activePage === 'sales_history' ? 'text-brand-600' : 'text-slate-400' ?>"></i>
+                <span>Historique</span>
+            </a>
+        </div>
+    </div>
 </header>
 
 <!-- ================= BARRE DE NAVIGATION MOBILE INFÉRIEURE (STYLE APPLICATION SMARTPHONE) ================= -->
