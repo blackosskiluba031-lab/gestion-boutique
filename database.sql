@@ -8,14 +8,19 @@ USE `gestion_boutique_db`;
 CREATE TABLE IF NOT EXISTS `stores` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(150) NOT NULL,
+    `email` VARCHAR(150) UNIQUE NOT NULL,
+    `password` VARCHAR(255) NOT NULL,
     `phone` VARCHAR(50) NULL,
     `address` VARCHAR(255) NULL,
+    `logo` VARCHAR(255) NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insertion d'une boutique par défaut
-INSERT IGNORE INTO `stores` (`id`, `name`, `phone`, `address`, `created_at`) 
-VALUES (1, 'Boutique Prestige', '+225 07 00 00 00 01', 'Boulevard Principal, Centre-ville', NOW());
+-- Insertion de deux boutiques de démonstration (mot de passe par défaut: password123)
+INSERT IGNORE INTO `stores` (`id`, `name`, `email`, `password`, `phone`, `address`, `created_at`) 
+VALUES 
+(1, 'Boutique Prestige', 'prestige@possibility.tech', '$2y$10$w85o38F1oMhH362l1.B1yOi4J8aV4mF/W5n4xWkQ147qJ2q/8lG2S', '+225 07 00 00 00 01', 'Plateau, Centre Commercial', NOW()),
+(2, 'Boutique Express Sud', 'express@possibility.tech', '$2y$10$w85o38F1oMhH362l1.B1yOi4J8aV4mF/W5n4xWkQ147qJ2q/8lG2S', '+225 05 00 00 00 02', 'Avenue Commerciale, Zone Sud', NOW());
 
 -- Table des produits
 CREATE TABLE IF NOT EXISTS `products` (

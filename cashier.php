@@ -200,8 +200,8 @@ $products = $productModel->getAllByStore($storeId);
         <div class="px-6 py-3 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <a href="dashboard.php" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
-                        <i class="fa-solid fa-cash-register text-lg"></i>
+                    <div class="w-10 h-10 rounded-xl bg-white p-1 border border-slate-200 shadow-xs flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+                        <img src="assets/images/logo.png" alt="POSSIBILITY TECH" class="h-8 w-auto object-contain">
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center sm:gap-2">
                         <span class="text-sm sm:text-base font-black tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors uppercase">
@@ -258,6 +258,16 @@ $products = $productModel->getAllByStore($storeId);
                     <span id="currentTime" class="text-xs font-bold text-slate-700">--:--:--</span>
                     <span id="currentDate" class="text-[10px] text-slate-400">--/--/----</span>
                 </div>
+
+                <!-- Bouton Déconnexion -->
+                <a 
+                    href="logout.php" 
+                    onclick="return confirm('Voulez-vous vous déconnecter de votre espace boutique ?');"
+                    class="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 flex items-center justify-center text-xs transition-colors ml-1"
+                    title="Se déconnecter"
+                >
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </a>
             </div>
         </div>
     </header>

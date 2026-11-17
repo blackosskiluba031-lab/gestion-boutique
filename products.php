@@ -33,12 +33,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         // 1. AJOUT D'UN NOUVEAU PRODUIT
         if ($action === 'create') {
             $name = trim($_POST['name'] ?? '');
-            $categoryId = !empty($_POST['category_id']) ? (int)$_POST['category_id'] : null;
+            $categoryId = !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null;
             $barcode = trim($_POST['barcode'] ?? '') ?: null;
-            $purchasePrice = (float)($_POST['purchase_price'] ?? 0);
-            $unitPrice = (float)($_POST['unit_price'] ?? 0);
-            $stockQuantity = (int)($_POST['stock_quantity'] ?? 0);
-            $minStockAlert = (int)($_POST['min_stock_alert'] ?? 5);
+            $purchasePrice = (float) ($_POST['purchase_price'] ?? 0);
+            $unitPrice = (float) ($_POST['unit_price'] ?? 0);
+            $stockQuantity = (int) ($_POST['stock_quantity'] ?? 0);
+            $minStockAlert = (int) ($_POST['min_stock_alert'] ?? 5);
 
             if (empty($name)) {
                 throw new InvalidArgumentException("Le nom du produit est obligatoire.");
@@ -66,13 +66,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
         // 2. MODIFICATION D'UN PRODUIT EXISTANT
         if ($action === 'update') {
-            $productId = (int)($_POST['product_id'] ?? 0);
+            $productId = (int) ($_POST['product_id'] ?? 0);
             $name = trim($_POST['name'] ?? '');
-            $categoryId = !empty($_POST['category_id']) ? (int)$_POST['category_id'] : null;
+            $categoryId = !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null;
             $barcode = trim($_POST['barcode'] ?? '') ?: null;
-            $purchasePrice = (float)($_POST['purchase_price'] ?? 0);
-            $unitPrice = (float)($_POST['unit_price'] ?? 0);
-            $minStockAlert = (int)($_POST['min_stock_alert'] ?? 5);
+            $purchasePrice = (float) ($_POST['purchase_price'] ?? 0);
+            $unitPrice = (float) ($_POST['unit_price'] ?? 0);
+            $minStockAlert = (int) ($_POST['min_stock_alert'] ?? 5);
 
             if ($productId <= 0 || empty($name)) {
                 throw new InvalidArgumentException("Informations de produit invalides.");
@@ -96,8 +96,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
         // 3. RÉAPPROVISIONNEMENT RAPIDE DE STOCK
         if ($action === 'restock') {
-            $productId = (int)($_POST['product_id'] ?? 0);
-            $quantityToAdd = (int)($_POST['quantity_to_add'] ?? 0);
+            $productId = (int) ($_POST['product_id'] ?? 0);
+            $quantityToAdd = (int) ($_POST['quantity_to_add'] ?? 0);
 
             if ($productId <= 0 || $quantityToAdd <= 0) {
                 throw new InvalidArgumentException("Veuillez renseigner une quantité valide à ajouter.");
@@ -114,7 +114,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
         // 4. SUPPRESSION D'UN PRODUIT
         if ($action === 'delete') {
-            $productId = (int)($_POST['product_id'] ?? 0);
+            $productId = (int) ($_POST['product_id'] ?? 0);
             if ($productId <= 0) {
                 throw new InvalidArgumentException("Produit introuvable.");
             }
@@ -145,20 +145,22 @@ $totalStockCost = 0.0;
 $totalLowStockCount = 0;
 
 foreach ($allProducts as $p) {
-    $qty = (int)$p['stock_quantity'];
+    $qty = (int) $p['stock_quantity'];
     $totalStockUnits += $qty;
-    $totalStockCost += $qty * (float)$p['purchase_price'];
-    if ($qty <= (int)$p['min_stock_alert']) {
+    $totalStockCost += $qty * (float) $p['purchase_price'];
+    if ($qty <= (int) $p['min_stock_alert']) {
         $totalLowStockCount++;
     }
 }
 
-function fmtMoney(float $amount): string {
+function fmtMoney(float $amount): string
+{
     return number_format($amount, 2, ',', ' ') . ' FCFA';
 }
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="h-full bg-slate-50">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -187,12 +189,13 @@ function fmtMoney(float $amount): string {
     <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body class="min-h-full flex flex-col font-sans text-slate-800 antialiased">
 
     <!-- Top Navigation Bar Partagée -->
-    <?php 
-        $activePage = 'products';
-        require __DIR__ . '/includes/header_nav.php'; 
+    <?php
+    $activePage = 'products';
+    require __DIR__ . '/includes/header_nav.php';
     ?>
 
     <!-- Contenu Principal -->
@@ -200,9 +203,11 @@ function fmtMoney(float $amount): string {
 
         <!-- Notification Flash -->
         <?php if ($feedbackMessage): ?>
-            <div class="p-4 rounded-xl text-xs font-semibold flex items-center justify-between border shadow-sm <?= $feedbackType === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200' ?>">
+            <div
+                class="p-4 rounded-xl text-xs font-semibold flex items-center justify-between border shadow-sm <?= $feedbackType === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200' ?>">
                 <div class="flex items-center gap-2.5">
-                    <i class="fa-solid <?= $feedbackType === 'success' ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-red-600' ?> text-base"></i>
+                    <i
+                        class="fa-solid <?= $feedbackType === 'success' ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-red-600' ?> text-base"></i>
                     <span><?= htmlspecialchars($feedbackMessage) ?></span>
                 </div>
                 <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">
@@ -213,10 +218,11 @@ function fmtMoney(float $amount): string {
 
         <!-- ================= STATISTIQUES RÉSUMÉES DU STOCK ================= -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
+
             <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
                 <div>
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Total Références</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Total
+                        Références</span>
                     <span class="text-2xl font-black text-slate-900 mt-1 block"><?= $totalReferences ?></span>
                     <span class="text-[11px] text-slate-500">Produits au catalogue</span>
                 </div>
@@ -227,22 +233,27 @@ function fmtMoney(float $amount): string {
 
             <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
                 <div>
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Articles en Stock</span>
-                    <span class="text-2xl font-black text-slate-900 mt-1 block"><?= number_format($totalStockUnits, 0, ',', ' ') ?></span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Articles en
+                        Stock</span>
+                    <span
+                        class="text-2xl font-black text-slate-900 mt-1 block"><?= number_format($totalStockUnits, 0, ',', ' ') ?></span>
                     <span class="text-[11px] text-slate-500">Unités physiques disponibles</span>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
+                <div
+                    class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
                     <i class="fa-solid fa-layer-group"></i>
                 </div>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
                 <div>
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Valeur d'Achat Stock</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Valeur d'Achat
+                        Stock</span>
                     <span class="text-2xl font-black text-slate-900 mt-1 block"><?= fmtMoney($totalStockCost) ?></span>
                     <span class="text-[11px] text-slate-500">Coût immobilisé fournisseur</span>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
+                <div
+                    class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
                     <i class="fa-solid fa-coins"></i>
                 </div>
             </div>
@@ -250,10 +261,12 @@ function fmtMoney(float $amount): string {
             <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
                 <div>
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Alertes Réappro</span>
-                    <span class="text-2xl font-black <?= $totalLowStockCount > 0 ? 'text-amber-600' : 'text-emerald-600' ?> mt-1 block"><?= $totalLowStockCount ?></span>
+                    <span
+                        class="text-2xl font-black <?= $totalLowStockCount > 0 ? 'text-amber-600' : 'text-emerald-600' ?> mt-1 block"><?= $totalLowStockCount ?></span>
                     <span class="text-[11px] text-slate-500">Produits en stock critique</span>
                 </div>
-                <div class="w-10 h-10 rounded-xl <?= $totalLowStockCount > 0 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600' ?> flex items-center justify-center text-base">
+                <div
+                    class="w-10 h-10 rounded-xl <?= $totalLowStockCount > 0 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600' ?> flex items-center justify-center text-base">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
             </div>
@@ -262,51 +275,39 @@ function fmtMoney(float $amount): string {
 
 
         <!-- ================= FILTRES ET RECHERCHE ================= -->
-        <section class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
-            
+        <section
+            class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
+
             <!-- Recherche textuelle / Code-barres -->
             <div class="relative w-full md:w-96">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </div>
-                <input 
-                    type="text" 
-                    id="tableSearchInput" 
-                    placeholder="Filtrer par nom ou code-barres..." 
+                <input type="text" id="tableSearchInput" placeholder="Filtrer par nom ou code-barres..."
                     class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
-                    oninput="filterTable()"
-                >
+                    oninput="filterTable()">
             </div>
 
             <!-- Filtres statut et catégorie -->
             <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                <select 
-                    id="categoryFilter" 
-                    onchange="filterTable()" 
-                    class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
-                >
+                <select id="categoryFilter" onchange="filterTable()"
+                    class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
                     <option value="all">Toutes les catégories</option>
                     <?php foreach ($categories as $id => $name): ?>
                         <option value="<?= $id ?>"><?= htmlspecialchars($name) ?></option>
                     <?php endforeach; ?>
                 </select>
 
-                <select 
-                    id="stockStatusFilter" 
-                    onchange="filterTable()" 
-                    class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
-                >
+                <select id="stockStatusFilter" onchange="filterTable()"
+                    class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
                     <option value="all">Tous les états de stock</option>
                     <option value="in_stock">En stock normal</option>
                     <option value="low_stock">Stock critique / faible</option>
                     <option value="out_of_stock">Rupture de stock (0)</option>
                 </select>
 
-                <button 
-                    type="button" 
-                    onclick="openCreateModal()" 
-                    class="py-2 px-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm flex-shrink-0"
-                >
+                <button type="button" onclick="openCreateModal()"
+                    class="py-2 px-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm flex-shrink-0">
                     <i class="fa-solid fa-plus text-[10px]"></i>
                     <span>Nouveau Produit</span>
                 </button>
@@ -318,7 +319,8 @@ function fmtMoney(float $amount): string {
         <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs text-slate-600">
-                    <thead class="bg-slate-50 border-b border-slate-200 uppercase font-bold text-slate-400 text-[10px] tracking-wider">
+                    <thead
+                        class="bg-slate-50 border-b border-slate-200 uppercase font-bold text-slate-400 text-[10px] tracking-wider">
                         <tr>
                             <th class="py-3.5 px-4">Produit & Réf</th>
                             <th class="py-3.5 px-4">Catégorie</th>
@@ -331,41 +333,41 @@ function fmtMoney(float $amount): string {
                     </thead>
                     <tbody id="productsTableBody" class="divide-y divide-slate-100 font-normal">
                         <?php foreach ($allProducts as $p): ?>
-                            <?php 
-                                $stock = (int)$p['stock_quantity'];
-                                $minAlert = (int)$p['min_stock_alert'];
-                                $uPrice = (float)$p['unit_price'];
-                                $pPrice = (float)$p['purchase_price'];
-                                $unitMargin = $uPrice - $pPrice;
-                                $marginPercent = $uPrice > 0 ? round(($unitMargin / $uPrice) * 100, 1) : 0;
-                                $catName = $categories[$p['category_id']] ?? 'Général';
+                            <?php
+                            $stock = (int) $p['stock_quantity'];
+                            $minAlert = (int) $p['min_stock_alert'];
+                            $uPrice = (float) $p['unit_price'];
+                            $pPrice = (float) $p['purchase_price'];
+                            $unitMargin = $uPrice - $pPrice;
+                            $marginPercent = $uPrice > 0 ? round(($unitMargin / $uPrice) * 100, 1) : 0;
+                            $catName = $categories[$p['category_id']] ?? 'Général';
 
-                                $stockState = 'in_stock';
-                                if ($stock <= 0) {
-                                    $stockState = 'out_of_stock';
-                                } elseif ($stock <= $minAlert) {
-                                    $stockState = 'low_stock';
-                                }
+                            $stockState = 'in_stock';
+                            if ($stock <= 0) {
+                                $stockState = 'out_of_stock';
+                            } elseif ($stock <= $minAlert) {
+                                $stockState = 'low_stock';
+                            }
                             ?>
-                            <tr 
-                                class="hover:bg-slate-50/80 transition-colors product-row" 
+                            <tr class="hover:bg-slate-50/80 transition-colors product-row"
                                 data-name="<?= strtolower(htmlspecialchars($p['name'])) ?>"
                                 data-barcode="<?= strtolower(htmlspecialchars($p['barcode'] ?? '')) ?>"
-                                data-category="<?= $p['category_id'] ?>"
-                                data-status="<?= $stockState ?>"
-                            >
+                                data-category="<?= $p['category_id'] ?>" data-status="<?= $stockState ?>">
                                 <!-- Produit & Code-barres -->
                                 <td class="py-3.5 px-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs flex-shrink-0">
+                                        <div
+                                            class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs flex-shrink-0">
                                             <?= strtoupper(substr($p['name'], 0, 2)) ?>
                                         </div>
                                         <div class="min-w-0">
-                                            <strong class="text-slate-900 block truncate font-bold text-xs" title="<?= htmlspecialchars($p['name']) ?>">
+                                            <strong class="text-slate-900 block truncate font-bold text-xs"
+                                                title="<?= htmlspecialchars($p['name']) ?>">
                                                 <?= htmlspecialchars($p['name']) ?>
                                             </strong>
                                             <span class="text-[10px] text-slate-400 font-mono">
-                                                <i class="fa-solid fa-barcode text-[9px] mr-1"></i><?= htmlspecialchars($p['barcode'] ?? 'Non renseigné') ?>
+                                                <i
+                                                    class="fa-solid fa-barcode text-[9px] mr-1"></i><?= htmlspecialchars($p['barcode'] ?? 'Non renseigné') ?>
                                             </span>
                                         </div>
                                     </div>
@@ -373,7 +375,8 @@ function fmtMoney(float $amount): string {
 
                                 <!-- Catégorie -->
                                 <td class="py-3.5 px-4">
-                                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-700">
+                                    <span
+                                        class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-700">
                                         <?= htmlspecialchars($catName) ?>
                                     </span>
                                 </td>
@@ -390,7 +393,8 @@ function fmtMoney(float $amount): string {
 
                                 <!-- Marge Unitaire -->
                                 <td class="py-3.5 px-4 text-right">
-                                    <span class="font-bold text-emerald-600 block font-mono">+<?= fmtMoney($unitMargin) ?></span>
+                                    <span
+                                        class="font-bold text-emerald-600 block font-mono">+<?= fmtMoney($unitMargin) ?></span>
                                     <span class="text-[10px] text-emerald-500 font-medium">(<?= $marginPercent ?>%)</span>
                                 </td>
 
@@ -398,56 +402,56 @@ function fmtMoney(float $amount): string {
                                 <td class="py-3.5 px-4 text-center">
                                     <div class="inline-flex flex-col items-center">
                                         <?php if ($stockState === 'out_of_stock'): ?>
-                                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-700 border border-red-200">
+                                            <span
+                                                class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-700 border border-red-200">
                                                 Rupture (0)
                                             </span>
                                         <?php elseif ($stockState === 'low_stock'): ?>
-                                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                            <span
+                                                class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
                                                 Critique (<?= $stock ?>)
                                             </span>
                                         <?php else: ?>
-                                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            <span
+                                                class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                                 En stock (<?= $stock ?>)
                                             </span>
                                         <?php endif; ?>
-                                        <span class="text-[9px] text-slate-400 mt-0.5">Seuil alerte : <?= $minAlert ?></span>
+                                        <span class="text-[9px] text-slate-400 mt-0.5">Seuil alerte :
+                                            <?= $minAlert ?></span>
                                     </div>
                                 </td>
 
                                 <!-- Boutons d'Action -->
                                 <td class="py-3.5 px-4 text-right">
                                     <div class="flex items-center justify-end gap-1.5">
-                                        
+
                                         <!-- Approvisionnement rapide -->
-                                        <button 
-                                            type="button" 
+                                        <button type="button"
                                             onclick='openRestockModal(<?= json_encode($p, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'
                                             class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
-                                            title="Réapprovisionner le stock"
-                                        >
+                                            title="Réapprovisionner le stock">
                                             <i class="fa-solid fa-plus text-[10px]"></i>
                                             <span>Stock</span>
                                         </button>
 
                                         <!-- Modification -->
-                                        <button 
-                                            type="button" 
+                                        <button type="button"
                                             onclick='openEditModal(<?= json_encode($p, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'
                                             class="w-7 h-7 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center justify-center transition-colors"
-                                            title="Modifier le produit"
-                                        >
+                                            title="Modifier le produit">
                                             <i class="fa-regular fa-pen-to-square"></i>
                                         </button>
 
                                         <!-- Suppression -->
-                                        <form method="POST" onsubmit="return confirm('Confirmez-vous la suppression de ce produit ?');" class="inline">
+                                        <form method="POST"
+                                            onsubmit="return confirm('Confirmez-vous la suppression de ce produit ?');"
+                                            class="inline">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="product_id" value="<?= $p['id'] ?>">
-                                            <button 
-                                                type="submit" 
+                                            <button type="submit"
                                                 class="w-7 h-7 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-400 rounded-lg flex items-center justify-center transition-colors"
-                                                title="Supprimer"
-                                            >
+                                                title="Supprimer">
                                                 <i class="fa-regular fa-trash-can"></i>
                                             </button>
                                         </form>
@@ -471,11 +475,13 @@ function fmtMoney(float $amount): string {
     </main>
 
     <!-- ================= MODALE 1 : NOUVEAU PRODUIT ================= -->
-    <div id="createProductModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div id="createProductModal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center text-sm font-bold">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center text-sm font-bold">
                         <i class="fa-solid fa-plus"></i>
                     </div>
                     <h3 class="text-sm font-bold text-slate-900">Nouveau Produit au Catalogue</h3>
@@ -490,13 +496,15 @@ function fmtMoney(float $amount): string {
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Désignation du Produit *</label>
-                    <input type="text" name="name" required placeholder="Ex: Huile d'Olive Vierge 1L" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <input type="text" name="name" required placeholder="Ex: Huile d'Olive Vierge 1L"
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Catégorie</label>
-                        <select name="category_id" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <select name="category_id"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
                             <?php foreach ($categories as $id => $name): ?>
                                 <option value="<?= $id ?>"><?= htmlspecialchars($name) ?></option>
                             <?php endforeach; ?>
@@ -504,37 +512,45 @@ function fmtMoney(float $amount): string {
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Code-barres / EAN</label>
-                        <input type="text" name="barcode" placeholder="Ex: 301234567890" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <input type="text" name="barcode" placeholder="Ex: 301234567890"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Prix d'Achat Fournisseur (FCFA)</label>
-                        <input type="number" step="0.01" min="0" name="purchase_price" required placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Prix d'Achat Fournisseur
+                            (FCFA)</label>
+                        <input type="number" step="0.01" min="0" name="purchase_price" required placeholder="0.00"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Prix de Vente Client (FCFA) *</label>
-                        <input type="number" step="0.01" min="0" name="unit_price" required placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <input type="number" step="0.01" min="0" name="unit_price" required placeholder="0.00"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Stock Initial en Rayon</label>
-                        <input type="number" min="0" name="stock_quantity" value="10" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <input type="number" min="0" name="stock_quantity" value="10" required
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Seuil Alerte Réappro</label>
-                        <input type="number" min="1" name="min_stock_alert" value="5" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <input type="number" min="1" name="min_stock_alert" value="5" required
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
                 </div>
 
                 <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-                    <button type="button" onclick="closeCreateModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    <button type="button" onclick="closeCreateModal()"
+                        class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
                         Annuler
                     </button>
-                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-600/20 transition-colors">
+                    <button type="submit"
+                        class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-600/20 transition-colors">
                         Enregistrer le Produit
                     </button>
                 </div>
@@ -544,11 +560,13 @@ function fmtMoney(float $amount): string {
 
 
     <!-- ================= MODALE 2 : MODIFICATION DU PRODUIT ================= -->
-    <div id="editProductModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div id="editProductModal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm font-bold">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm font-bold">
                         <i class="fa-regular fa-pen-to-square"></i>
                     </div>
                     <h3 class="text-sm font-bold text-slate-900">Modifier le Produit</h3>
@@ -564,13 +582,15 @@ function fmtMoney(float $amount): string {
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Désignation du Produit *</label>
-                    <input type="text" name="name" id="editProductName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <input type="text" name="name" id="editProductName" required
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Catégorie</label>
-                        <select name="category_id" id="editProductCategory" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <select name="category_id" id="editProductCategory"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
                             <?php foreach ($categories as $id => $name): ?>
                                 <option value="<?= $id ?>"><?= htmlspecialchars($name) ?></option>
                             <?php endforeach; ?>
@@ -578,31 +598,38 @@ function fmtMoney(float $amount): string {
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Code-barres / EAN</label>
-                        <input type="text" name="barcode" id="editProductBarcode" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <input type="text" name="barcode" id="editProductBarcode"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Prix d'Achat (FCFA)</label>
-                        <input type="number" step="0.01" min="0" name="purchase_price" id="editProductPurchasePrice" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <input type="number" step="0.01" min="0" name="purchase_price" id="editProductPurchasePrice"
+                            required
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Prix de Vente (FCFA) *</label>
-                        <input type="number" step="0.01" min="0" name="unit_price" id="editProductUnitPrice" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <input type="number" step="0.01" min="0" name="unit_price" id="editProductUnitPrice" required
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Seuil Alerte Stock Faible</label>
-                    <input type="number" min="1" name="min_stock_alert" id="editProductMinAlert" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <input type="number" min="1" name="min_stock_alert" id="editProductMinAlert" required
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
                 </div>
 
                 <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    <button type="button" onclick="closeEditModal()"
+                        class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
                         Annuler
                     </button>
-                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/20 transition-colors">
+                    <button type="submit"
+                        class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/20 transition-colors">
                         Mettre à Jour
                     </button>
                 </div>
@@ -612,11 +639,13 @@ function fmtMoney(float $amount): string {
 
 
     <!-- ================= MODALE 3 : RÉAPPROVISIONNEMENT RAPIDE ================= -->
-    <div id="restockModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div id="restockModal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden flex flex-col">
             <div class="px-6 py-4 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">
                         <i class="fa-solid fa-truck-ramp-box"></i>
                     </div>
                     <h3 class="text-sm font-bold text-emerald-950">Réapprovisionner</h3>
@@ -641,29 +670,24 @@ function fmtMoney(float $amount): string {
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Quantité livrée à ajouter (+)</label>
-                    <input 
-                        type="number" 
-                        min="1" 
-                        step="1" 
-                        name="quantity_to_add" 
-                        id="restockQuantityInput" 
-                        value="10" 
-                        required 
-                        oninput="updateRestockPreview()"
-                        class="w-full px-3 py-2.5 bg-emerald-50/50 border border-emerald-300 rounded-xl text-base font-black text-emerald-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    >
+                    <input type="number" min="1" step="1" name="quantity_to_add" id="restockQuantityInput" value="10"
+                        required oninput="updateRestockPreview()"
+                        class="w-full px-3 py-2.5 bg-emerald-50/50 border border-emerald-300 rounded-xl text-base font-black text-emerald-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
 
-                <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs flex justify-between items-center text-emerald-900">
+                <div
+                    class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs flex justify-between items-center text-emerald-900">
                     <span>Nouveau stock prévu :</span>
                     <strong class="text-sm font-black text-emerald-700" id="restockNewStockPreview">0</strong>
                 </div>
 
                 <div class="pt-2 flex items-center justify-end gap-2">
-                    <button type="button" onclick="closeRestockModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    <button type="button" onclick="closeRestockModal()"
+                        class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
                         Annuler
                     </button>
-                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-colors">
+                    <button type="submit"
+                        class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-colors">
                         Valider l'Approvisionnement
                     </button>
                 </div>
@@ -675,7 +699,8 @@ function fmtMoney(float $amount): string {
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 mt-12 py-5 text-center text-xs text-slate-400">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p>&copy; <?= date('Y') ?> <strong>Gestion Boutique</strong> - Système Point de Vente & Gestion des Stocks</p>
+            <p>&copy; <?= date('Y') ?> <strong>Gestion Boutique</strong> - Système Point de Vente & Gestion des Stocks
+            </p>
             <p class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                 <span class="text-slate-600">Base MySQL connectée (127.0.0.1)</span>
@@ -772,4 +797,5 @@ function fmtMoney(float $amount): string {
         });
     </script>
 </body>
+
 </html>

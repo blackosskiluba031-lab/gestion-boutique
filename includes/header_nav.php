@@ -1,18 +1,15 @@
 <?php
 // includes/header_nav.php
-// Barre de navigation supérieure partagée pour POSSYBILITY TECH
+// Barre de navigation supérieure partagée pour POSSIBILITY TECH
 
 if (!isset($appName)) {
-    $appName = "POSSYBILITY TECH";
+    $appName = "POSSIBILITY TECH";
 }
 if (!isset($currentStoreName)) {
-    $currentStoreName = "Boutique Prestige";
+    $currentStoreName = "Boutique";
 }
 if (!isset($activePage)) {
     $activePage = 'dashboard';
-}
-if (!isset($availableStores)) {
-    $availableStores = [];
 }
 ?>
 <!-- Top Navigation Bar -->
@@ -23,8 +20,9 @@ if (!isset($availableStores)) {
             <!-- Logo & Nom de l'application + Nom de la boutique -->
             <div class="flex items-center space-x-3">
                 <a href="dashboard.php" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
-                        <i class="fa-solid fa-store text-lg"></i>
+                    <!-- Logo Officiel Possibility Tech -->
+                    <div class="w-10 h-10 rounded-xl bg-white p-1 border border-slate-200 shadow-xs flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+                        <img src="assets/images/logo.png" alt="POSSIBILITY TECH" class="h-8 w-auto object-contain">
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center sm:gap-2">
                         <span class="text-sm sm:text-base font-black tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors uppercase">
@@ -32,9 +30,9 @@ if (!isset($availableStores)) {
                         </span>
                         <div class="flex items-center gap-1.5">
                             <span class="hidden sm:inline text-slate-300 font-light">•</span>
-                            <!-- Nom de la Boutique bien visible -->
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200 shadow-sm" title="Boutique actuellement active">
-                                <i class="fa-solid fa-shop text-[10px] text-brand-500"></i>
+                            <!-- Nom de la Boutique connectée bien visible -->
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200 shadow-xs" title="Boutique connectée">
+                                <i class="fa-solid fa-store text-[10px] text-brand-500"></i>
                                 <span><?= htmlspecialchars($currentStoreName) ?></span>
                             </span>
                         </div>
@@ -62,34 +60,18 @@ if (!isset($availableStores)) {
                 </a>
             </nav>
 
-            <!-- Menu de droite : Sélecteur de Boutique & Accès Caisse -->
+            <!-- Menu de droite : Espace Boutique & Déconnexion -->
             <div class="flex items-center space-x-2.5">
                 
-                <!-- Sélecteur de Boutique (si plusieurs boutiques ou modification du nom) -->
-                <?php if (!empty($availableStores) && count($availableStores) > 1): ?>
-                    <div class="relative inline-block text-left">
-                        <select 
-                            onchange="window.location.href = '?switch_store=' + this.value;"
-                            class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer transition-colors"
-                            title="Changer de boutique"
-                        >
-                            <?php foreach ($availableStores as $st): ?>
-                                <option value="<?= $st['id'] ?>" <?= ($st['id'] == ($currentStore['id'] ?? 1)) ? 'selected' : '' ?>>
-                                    🏪 <?= htmlspecialchars($st['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Bouton modifier le nom de la boutique -->
+                <!-- Bouton modifier les informations de la boutique -->
                 <button 
                     type="button" 
                     onclick="openStoreRenameModal()"
-                    class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs transition-colors"
-                    title="Renommer la boutique"
+                    class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                    title="Paramètres boutique"
                 >
-                    <i class="fa-solid fa-pen-to-square"></i>
+                    <i class="fa-solid fa-gear text-slate-500"></i>
+                    <span class="hidden lg:inline">Paramètres</span>
                 </button>
 
                 <!-- Bouton action : Caisse Rapide (sauf si déjà sur la page caisse) -->
@@ -103,6 +85,16 @@ if (!isset($availableStores)) {
                     </a>
                 <?php endif; ?>
 
+                <!-- Bouton Déconnexion du compte boutique -->
+                <a 
+                    href="logout.php" 
+                    onclick="return confirm('Voulez-vous vous déconnecter de votre espace boutique ?');"
+                    class="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 flex items-center justify-center text-xs transition-colors"
+                    title="Se déconnecter"
+                >
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </a>
+
             </div>
         </div>
     </div>
@@ -110,13 +102,13 @@ if (!isset($availableStores)) {
 
 <!-- Modale de personnalisation du nom de la boutique -->
 <div id="storeRenameModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden flex flex-col animate-in fade-in zoom-in duration-150">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden flex flex-col animate-in fade-in zoom-in duration-150">
         <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center text-xs font-bold">
                     <i class="fa-solid fa-store"></i>
                 </div>
-                <h3 class="text-xs font-bold text-slate-900">Renommer la Boutique</h3>
+                <h3 class="text-xs font-bold text-slate-900">Paramètres de la Boutique</h3>
             </div>
             <button type="button" onclick="closeStoreRenameModal()" class="text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-sm"></i>
@@ -135,9 +127,20 @@ if (!isset($availableStores)) {
                     value="<?= htmlspecialchars($currentStoreName) ?>" 
                     required 
                     class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    placeholder="Ex: Boutique Prestige, Supermarché Étoile..."
+                    placeholder="Ex: Boutique Prestige..."
                 >
-                <p class="text-[10px] text-slate-400 mt-1">Ce nom apparaîtra en haut sur la barre de navigation et sur les tickets de caisse.</p>
+                <p class="text-[10px] text-slate-400 mt-1">Ce nom s'affiche dans l'en-tête et sur tous les tickets de caisse imprimés.</p>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                <div class="flex justify-between text-slate-500">
+                    <span>Identifiant / Email :</span>
+                    <strong class="text-slate-800"><?= htmlspecialchars($currentStoreEmail) ?></strong>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                    <span>ID Boutique :</span>
+                    <span class="font-mono text-brand-600 font-bold">#<?= $currentStoreId ?></span>
+                </div>
             </div>
 
             <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">

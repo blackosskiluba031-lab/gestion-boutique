@@ -12,8 +12,11 @@ try {
         CREATE TABLE IF NOT EXISTS `stores` (
             `id` INT AUTO_INCREMENT PRIMARY KEY,
             `name` VARCHAR(150) NOT NULL,
+            `email` VARCHAR(150) UNIQUE NOT NULL,
+            `password` VARCHAR(255) NOT NULL,
             `phone` VARCHAR(50) NULL,
             `address` VARCHAR(255) NULL,
+            `logo` VARCHAR(255) NULL,
             `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
@@ -21,8 +24,10 @@ try {
     // Vérifier si une boutique existe
     $storeCount = (int)$pdo->query("SELECT COUNT(*) FROM stores")->fetchColumn();
     if ($storeCount === 0) {
-        $stmtStore = $pdo->prepare("INSERT INTO stores (id, name, phone, address, created_at) VALUES (?, ?, ?, ?, NOW())");
-        $stmtStore->execute([1, 'POSSYBILITY TECH - Boutique Principale', '+225 07 00 00 00 01', 'Plateau, Centre Commercial']);
+        $defaultHash = password_hash('password123', PASSWORD_DEFAULT);
+        $stmtStore = $pdo->prepare("INSERT INTO stores (id, name, email, password, phone, address, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+        $stmtStore->execute([1, 'Boutique Prestige', 'prestige@possibility.tech', $defaultHash, '+225 07 00 00 00 01', 'Plateau, Centre Commercial']);
+        $stmtStore->execute([2, 'Boutique Express Sud', 'express@possibility.tech', $defaultHash, '+225 05 00 00 00 02', 'Avenue Commerciale, Zone Sud']);
     }
 
     // 2. Table des produits
