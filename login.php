@@ -184,26 +184,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 </button>
             </form>
 
-            <!-- Démos rapides -->
-            <div class="mt-5 pt-4 border-t border-slate-100">
-                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wide text-center mb-3">Comptes de démonstration</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="fillDemo('prestige','password123')" class="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 flex items-center gap-1.5 transition-colors active:scale-95">
-                        <i class="fa-solid fa-store text-blue-500 text-[11px]"></i>
-                        Boutique Prestige
-                    </button>
-                    <button onclick="fillDemo('express','password123')" class="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200 flex items-center gap-1.5 transition-colors active:scale-95">
-                        <i class="fa-solid fa-store text-emerald-500 text-[11px]"></i>
-                        Express Sud
-                    </button>
-                </div>
-            </div>
-
             <!-- Lien inscription -->
-            <div class="mt-4 text-center">
+            <div class="mt-6 pt-5 border-t border-slate-100 text-center">
                 <p class="text-xs text-slate-500">
-                    Pas encore de compte ?
-                    <a href="register.php" class="font-black text-brand-600 hover:text-brand-800 hover:underline ml-1">Créer une boutique</a>
+                    Pas encore de compte boutique ?
+                    <a href="register.php" class="font-black text-brand-600 hover:text-brand-800 hover:underline ml-1">Créer une boutique (Essai 15j)</a>
                 </p>
             </div>
         </div>
@@ -215,13 +200,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
     <!-- Service Worker + PWA -->
     <script>
-        // Fill demo credentials
-        function fillDemo(username, password) {
-            document.getElementById('identifier').value = username;
-            document.getElementById('password').value = password;
-            document.getElementById('password').closest('form').submit();
-        }
-
         // Toggle password visibility
         function togglePwd() {
             const inp = document.getElementById('password');

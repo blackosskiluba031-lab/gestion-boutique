@@ -24,6 +24,26 @@ $stmtToday = $pdo->prepare("
 $stmtToday->execute(['store_id' => $storeId]);
 $todayStats = $stmtToday->fetch();
 
+// Ventes d'hier (pour calcul du % d'évolution réel)
+$stmtYesterday = $pdo->prepare("
+    SELECT COALESCE(SUM(total_amount), 0) AS ca_yesterday, COUNT(*) AS count_yesterday
+    FROM sales 
+    WHERE store_id = :store_id AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+");
+$stmtYesterday->execute(['store_id' => $storeId]);
+$yesterdayStats = $stmtYesterday->fetch();
+
+$countToday = (int)$todayStats['count_today'];
+$countYesterday = (int)$yesterdayStats['count_yesterday'];
+if ($countYesterday > 0) {
+    $todayChangePct = round((($countToday - $countYesterday) / $countYesterday) * 100);
+    $todayBadgeText = ($todayChangePct >= 0 ? '+' : '') . $todayChangePct . '%';
+} elseif ($countToday > 0) {
+    $todayBadgeText = '+100%';
+} else {
+    $todayBadgeText = '0%';
+}
+
 // CA du Mois & Bénéfice du Mois
 $stmtMonth = $pdo->prepare("
     SELECT 
@@ -37,6 +57,37 @@ $stmtMonth = $pdo->prepare("
 ");
 $stmtMonth->execute(['store_id' => $storeId]);
 $monthStats = $stmtMonth->fetch();
+
+// CA du Mois Dernier (pour % évolution réel)
+$stmtLastMonth = $pdo->prepare("
+    SELECT COALESCE(SUM(total_amount), 0) AS ca_last_month
+    FROM sales 
+    WHERE store_id = :store_id 
+      AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+      AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+");
+$stmtLastMonth->execute(['store_id' => $storeId]);
+$caLastMonth = (float)$stmtLastMonth->fetchColumn();
+
+$caMonth = (float)$monthStats['ca_month'];
+$profitMonth = (float)$monthStats['profit_month'];
+
+if ($caLastMonth > 0) {
+    $monthChangePct = round((($caMonth - $caLastMonth) / $caLastMonth) * 100);
+    $monthBadgeText = ($monthChangePct >= 0 ? '+' : '') . $monthChangePct . '%';
+} elseif ($caMonth > 0) {
+    $monthBadgeText = '+100%';
+} else {
+    $monthBadgeText = '0%';
+}
+
+// Marge bénéficiaire réelle
+if ($caMonth > 0) {
+    $marginPercent = (int)round(($profitMonth / $caMonth) * 100);
+    $profitBadgeText = $marginPercent . '% marge';
+} else {
+    $profitBadgeText = '0%';
+}
 
 // Statistiques globales de la boutique
 $stmtGlobal = $pdo->prepare("
@@ -63,6 +114,9 @@ $stmtStock = $pdo->prepare("
 $stmtStock->execute(['store_id' => $storeId]);
 $stockStats = $stmtStock->fetch();
 
+$totalUnits = (int)$stockStats['total_units'];
+$totalReferences = (int)$stockStats['total_references'];
+
 // Nombre d'alertes stock
 $stmtAlertsCount = $pdo->prepare("
     SELECT COUNT(*) 
@@ -72,9 +126,10 @@ $stmtAlertsCount = $pdo->prepare("
 $stmtAlertsCount->execute(['store_id' => $storeId]);
 $lowStockCount = (int)$stmtAlertsCount->fetchColumn();
 
-// Calcul du ratio de santé du stock (pour la carte 5 avec la jauge de progression)
-$totalUnits = (int)$stockStats['total_units'];
-$stockHealthPercent = ($totalUnits > 0) ? min(100, max(20, round(100 - ($lowStockCount * 8)))) : 0;
+// Calcul réel du ratio de santé du stock
+$stockHealthPercent = ($totalReferences > 0) 
+    ? max(0, min(100, (int)round((($totalReferences - $lowStockCount) / $totalReferences) * 100))) 
+    : 100;
 
 // ================= 2. DONNÉES GRAPHIQUES (7 DERNIERS JOURS) =================
 $stmtChart7Days = $pdo->prepare("
@@ -386,7 +441,7 @@ function fmtFC(float $amount): string {
         <!-- ================= LIGNE 1 : LES 5 CARTES KPIS CONFORMES À L'IMAGE 1 ================= -->
         <section class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
             
-            <!-- CARTE 1 : Clients inscrits (Bleu avec vague et badge pill ↑ +12%) -->
+            <!-- CARTE 1 : Clients inscrits (Bleu avec vague et badge pill dynamique) -->
             <div class="mockup-kpi-card">
                 <!-- SVG Wave Bleu -->
                 <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
@@ -405,21 +460,21 @@ function fmtFC(float $amount): string {
                     <i class="fa-solid fa-users text-blue-600 text-2xl hidden"></i>
                 </div>
 
-                <!-- Contenu droit : Titre, Grand chiffre, Pill badge ↑ +12% -->
+                <!-- Contenu droit : Titre, Grand chiffre réel, Pill badge réel -->
                 <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
-                    <span class="text-xs font-bold text-slate-700 block truncate">Clients inscrits</span>
+                    <span class="text-xs font-bold text-slate-700 block truncate">Clients servis</span>
                     <strong class="text-2xl font-black text-slate-900 block my-0.5 tracking-tight truncate">
-                        <?= max((int)$todayStats['count_today'], 125) ?>
+                        <?= number_format($countToday, 0, ',', ' ') ?>
                     </strong>
                     <div>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#0062ff] text-white shadow-xs">
-                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i>+12%
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#0062ff] text-white shadow-xs">
+                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i><?= htmlspecialchars($todayBadgeText) ?>
                         </span>
                     </div>
                 </div>
             </div>
 
-            <!-- CARTE 2 : Produits en stock (Vert avec vague et badge pill ↑ +8%) -->
+            <!-- CARTE 2 : Produits en stock (Vert avec vague et badge pill réel) -->
             <div class="mockup-kpi-card">
                 <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
                     <defs>
@@ -440,17 +495,17 @@ function fmtFC(float $amount): string {
                 <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
                     <span class="text-xs font-bold text-slate-700 block truncate">Produits en stock</span>
                     <strong class="text-2xl font-black text-slate-900 block my-0.5 tracking-tight truncate">
-                        <?= number_format(max((int)$stockStats['total_units'], 8450), 0, ',', ' ') ?>
+                        <?= number_format($totalUnits, 0, ',', ' ') ?>
                     </strong>
                     <div>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#00c853] text-white shadow-xs">
-                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i>+8%
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#00c853] text-white shadow-xs">
+                            <i class="fa-solid fa-layer-group mr-1 text-[9px]"></i><?= $totalReferences ?> réf.
                         </span>
                     </div>
                 </div>
             </div>
 
-            <!-- CARTE 3 : Ventes ce mois (Orange avec vague et badge pill ↑ +15%) -->
+            <!-- CARTE 3 : Ventes ce mois (Orange avec vague et badge pill réel) -->
             <div class="mockup-kpi-card">
                 <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
                     <defs>
@@ -470,18 +525,18 @@ function fmtFC(float $amount): string {
 
                 <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
                     <span class="text-xs font-bold text-slate-700 block truncate">Ventes ce mois</span>
-                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate" title="<?= fmtFC((float)$monthStats['ca_month']) ?>">
-                        <?= ((float)$monthStats['ca_month'] > 0) ? fmtFC((float)$monthStats['ca_month']) : '2 560 000 FC' ?>
+                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate" title="<?= fmtFC($caMonth) ?>">
+                        <?= fmtFC($caMonth) ?>
                     </strong>
                     <div>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#ff6d00] text-white shadow-xs">
-                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i>+15%
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#ff6d00] text-white shadow-xs">
+                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i><?= htmlspecialchars($monthBadgeText) ?>
                         </span>
                     </div>
                 </div>
             </div>
 
-            <!-- CARTE 4 : Bénéfice estimé (Pourpre / Violet avec vague et badge pill ↑ +20%) -->
+            <!-- CARTE 4 : Bénéfice estimé (Pourpre / Violet avec vague et badge pill réel) -->
             <div class="mockup-kpi-card">
                 <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
                     <defs>
@@ -501,18 +556,18 @@ function fmtFC(float $amount): string {
 
                 <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
                     <span class="text-xs font-bold text-slate-700 block truncate">Bénéfice estimé</span>
-                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate" title="<?= fmtFC((float)$globalStats['profit_global']) ?>">
-                        <?= ((float)$globalStats['profit_global'] > 0) ? fmtFC((float)$globalStats['profit_global']) : '620 000 FC' ?>
+                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate" title="<?= fmtFC($profitMonth) ?>">
+                        <?= fmtFC($profitMonth) ?>
                     </strong>
                     <div>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#7c3aed] text-white shadow-xs">
-                            <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i>+20%
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#7c3aed] text-white shadow-xs">
+                            <i class="fa-solid fa-chart-line mr-1 text-[9px]"></i><?= htmlspecialchars($profitBadgeText) ?>
                         </span>
                     </div>
                 </div>
             </div>
 
-            <!-- CARTE 5 : Livraisons en cours (Cyan / Bleu lagon avec barre 70%) -->
+            <!-- CARTE 5 : Santé du stock / Alertes (Cyan / Bleu lagon avec barre réelle) -->
             <div class="mockup-kpi-card">
                 <svg class="wave-svg" viewBox="0 0 160 110" preserveAspectRatio="none">
                     <defs>
@@ -526,23 +581,25 @@ function fmtFC(float $amount): string {
 
                 <!-- Miniature exacte conforme à l'Image 1 (Camion de livraison blanc) -->
                 <div class="thumb-box">
-                    <img src="assets/images/kpi_thumb_5.png" alt="Livraisons en cours" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <img src="assets/images/kpi_thumb_5.png" alt="Santé du stock" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <i class="fa-solid fa-truck text-cyan-600 text-2xl hidden"></i>
                 </div>
 
                 <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
-                    <span class="text-xs font-bold text-slate-700 block truncate">Livraisons en cours</span>
+                    <span class="text-xs font-bold text-slate-700 block truncate">Santé du stock</span>
                     <strong class="text-2xl font-black text-slate-900 block my-0.5 tracking-tight truncate">
-                        <?= max($lowStockCount, 7) ?>
+                        <?= $stockHealthPercent ?>%
                     </strong>
                     <div class="flex items-center gap-2 mt-1">
                         <div class="flex-1 bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                            <div class="h-full bg-[#00b4d8] rounded-full" style="width: 70%"></div>
+                            <div class="h-full bg-[#00b4d8] rounded-full transition-all duration-500" style="width: <?= $stockHealthPercent ?>%"></div>
                         </div>
-                        <span class="text-xs font-bold text-[#00b4d8]">70%</span>
+                        <span class="text-xs font-bold text-[#00b4d8] whitespace-nowrap"><?= $lowStockCount > 0 ? $lowStockCount . ' alerte' . ($lowStockCount > 1 ? 's' : '') : 'OK' ?></span>
                     </div>
                 </div>
             </div>
+
+        </section>
 
         </section>
 

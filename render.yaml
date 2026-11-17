@@ -1,17 +1,21 @@
 services:
   - type: web
-    name: possybility-tech
+    name: possibility-tech
     runtime: docker
     plan: free
     region: frankfurt
     envVars:
-      - key: DB_HOST
+      # Option 1 : Variables directes TiDB Cloud
+      - key: TIDB_HOST
         sync: false
-      - key: DB_PORT
-        value: "3306"
-      - key: DB_NAME
+      - key: TIDB_PORT
+        value: "4000"
+      - key: TIDB_USER
         sync: false
-      - key: DB_USER
+      - key: TIDB_PASSWORD
         sync: false
-      - key: DB_PASSWORD
+      - key: TIDB_DATABASE
+        value: "test"
+      # Option 2 : Ou DATABASE_URL complète fournie par TiDB Cloud
+      - key: DATABASE_URL
         sync: false

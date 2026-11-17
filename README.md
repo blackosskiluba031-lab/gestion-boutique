@@ -1,63 +1,27 @@
-# POSSYBILITY TECH - Système Point de Vente & Gestion de Boutique
+# POSSIBILITY TECH — Gestion Multi-Boutique & Point de Vente (PWA)
 
-Application moderne de gestion de stock, caisse enregistreuse et statistiques de vente développée en **PHP 8 (PDO)**, **MySQL**, **Tailwind CSS** et **Chart.js**.
-
----
-
-## 🚀 Déploiement sur Render (Étape par étape)
-
-### 1. Prérequis : Une base de données MySQL dans le Cloud
-Render ne proposant pas de base MySQL gratuite intégrée (uniquement PostgreSQL), vous pouvez créer une base MySQL gratuite en 1 minute sur :
-- **[Aiven.io](https://aiven.io/)** (Offre gratuite MySQL avec SSL)
-- **[Clever Cloud](https://www.clever-cloud.com/)** (MySQL gratuit 10 Mo)
-- **[TiDB Cloud](https://tidbcloud.com/)** (Compatible MySQL 100% gratuit)
-- **[Railway.app](https://railway.app/)**
-
-Vous obtiendrez vos identifiants :
-- `DB_HOST` (ex: `mysql-xxxx.aivencloud.com`)
-- `DB_PORT` (ex: `3306` ou personnalisé)
-- `DB_NAME` (ex: `defaultdb` ou `gestion_boutique_db`)
-- `DB_USER` (ex: `avnadmin` ou `root`)
-- `DB_PASSWORD` (votre mot de passe)
+Application moderne de gestion multi-boutique, caisse enregistreuse tactile, suivi de stock et statistiques en temps réel développée en **PHP 8 (PDO)**, **MySQL / TiDB Cloud**, **Tailwind CSS** et **Chart.js**.
 
 ---
 
-### 2. Publier le projet sur GitHub
-Dans votre terminal local :
-```bash
-git init
-git add .
-git commit -m "Déploiement POSSYBILITY TECH sur Render"
-git branch -M main
-git remote add origin https://github.com/VOTRE_COMPTE/gestion-boutique.git
-git push -u origin main
-```
+## 🚀 Déploiement en Production (Render + TiDB Cloud)
+
+Consultez le guide complet pas à pas : **[DEPLOY_RENDER_TIDB.md](DEPLOY_RENDER_TIDB.md)**.
+
+### En résumé :
+1. Créez un cluster gratuit sur **[TiDB Cloud](https://tidbcloud.com)** (compatible MySQL avec SSL automatique).
+2. Poussez votre code sur votre compte **GitHub**.
+3. Créez un **Web Service (Docker)** sur **[Render.com](https://render.com)**.
+4. Renseignez les variables d'environnement (`TIDB_HOST`, `TIDB_PORT=4000`, `TIDB_USER`, `TIDB_PASSWORD`, `TIDB_DATABASE`).
+5. Render lance le service : la base de données s'auto-initialise avec le compte admin par défaut (`admin` / `admin2024`).
 
 ---
 
-### 3. Créer le Web Service sur Render
-1. Connectez-vous sur [dashboard.render.com](https://dashboard.render.com/).
-2. Cliquez sur **New +** > **Web Service**.
-3. Sélectionnez votre dépôt GitHub **gestion-boutique**.
-4. Configurez :
-   - **Name** : `possybility-tech`
-   - **Language / Runtime** : `Docker`
-   - **Region** : Frankfurt (ou au choix)
-   - **Instance Type** : `Free`
-5. Dans la section **Environment Variables**, ajoutez :
-   - `DB_HOST` = votre hôte MySQL
-   - `DB_PORT` = `3306`
-   - `DB_NAME` = votre nom de base
-   - `DB_USER` = votre utilisateur
-   - `DB_PASSWORD` = votre mot de passe
-6. Cliquez sur **Deploy Web Service** !
+## 📱 Fonctionnalités Clés
 
----
-
-### 4. Initialisation Automatique de la Base
-Le conteneur exécute automatiquement `init_db_auto.php` au démarrage :
-- Création automatique des tables (`stores`, `products`, `sales`, `sale_items`).
-- Insertion automatique de la boutique par défaut et du catalogue de démonstration.
-
-Votre application sera en ligne à l'adresse :  
-`https://possybility-tech.onrender.com`
+- **🔑 Connexion par Identifiant (Username) :** Plus besoin d'email, chaque boutique possède son propre pseudo court.
+- **📲 Progressive Web App (PWA) :** Bannière d'installation automatique sur smartphone (Android / iOS) avec support hors-ligne.
+- **⏳ Essai Gratuit 15 Jours :** Compteur automatique sur le tableau de bord avec blocage automatique à expiration et redirection WhatsApp vers le contact support **0901247908**.
+- **🛡️ Espace Administrateur (/admin) :** Tableau de bord pour suivre les boutiques inscrites, activer/suspendre les comptes et prolonger les périodes d'essai.
+- **🛒 Caisse & POS Mobile :** Panier réactif, lecteur code-barres, calcul automatique de la monnaie et impression thermique.
+- **📊 Tableau de bord fidèle :** 5 indicateurs clés dynamiques avec design par vagues asymétriques conformes à la charte graphique.
