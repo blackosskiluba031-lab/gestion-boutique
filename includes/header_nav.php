@@ -100,6 +100,45 @@ if (!isset($activePage)) {
     </div>
 </header>
 
+<!-- ================= BARRE DE NAVIGATION MOBILE INFÉRIEURE (STYLE APPLICATION SMARTPHONE) ================= -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] no-print pb-[env(safe-area-inset-bottom)]">
+    <div class="grid grid-cols-4 h-16 max-w-md mx-auto px-2">
+        
+        <!-- Onglet 1 : Accueil / Tableau de bord -->
+        <a href="dashboard.php" class="flex flex-col items-center justify-center py-1 group transition-all <?= $activePage === 'dashboard' ? 'text-brand-600 font-black' : 'text-slate-400 hover:text-slate-700' ?>">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-transform active:scale-90 <?= $activePage === 'dashboard' ? 'bg-brand-50 text-brand-600 shadow-xs' : '' ?>">
+                <i class="fa-solid fa-chart-pie text-base"></i>
+            </div>
+            <span class="text-[10px] tracking-tight mt-0.5 font-bold">Accueil</span>
+        </a>
+
+        <!-- Onglet 2 : Caisse & Vente Rapide (Mise en valeur) -->
+        <a href="cashier.php" class="flex flex-col items-center justify-center py-1 group transition-all <?= $activePage === 'cashier' ? 'text-emerald-600 font-black' : 'text-slate-400 hover:text-slate-700' ?>">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-transform active:scale-90 <?= $activePage === 'cashier' ? 'bg-emerald-50 text-emerald-600 shadow-xs' : '' ?>">
+                <i class="fa-solid fa-cash-register text-base"></i>
+            </div>
+            <span class="text-[10px] tracking-tight mt-0.5 font-bold">Caisse</span>
+        </a>
+
+        <!-- Onglet 3 : Stocks & Produits -->
+        <a href="products.php" class="flex flex-col items-center justify-center py-1 group transition-all <?= $activePage === 'products' ? 'text-brand-600 font-black' : 'text-slate-400 hover:text-slate-700' ?>">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-transform active:scale-90 <?= $activePage === 'products' ? 'bg-brand-50 text-brand-600 shadow-xs' : '' ?>">
+                <i class="fa-solid fa-boxes-stacked text-base"></i>
+            </div>
+            <span class="text-[10px] tracking-tight mt-0.5 font-bold">Stocks</span>
+        </a>
+
+        <!-- Onglet 4 : Historique des Ventes -->
+        <a href="sales_history.php" class="flex flex-col items-center justify-center py-1 group transition-all <?= $activePage === 'sales_history' ? 'text-brand-600 font-black' : 'text-slate-400 hover:text-slate-700' ?>">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-transform active:scale-90 <?= $activePage === 'sales_history' ? 'bg-brand-50 text-brand-600 shadow-xs' : '' ?>">
+                <i class="fa-solid fa-clock-rotate-left text-base"></i>
+            </div>
+            <span class="text-[10px] tracking-tight mt-0.5 font-bold">Historique</span>
+        </a>
+
+    </div>
+</nav>
+
 <!-- Modale de personnalisation du nom de la boutique -->
 <div id="storeRenameModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden flex flex-col animate-in fade-in zoom-in duration-150">

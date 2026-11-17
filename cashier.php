@@ -124,7 +124,8 @@ $products = $productModel->getAllByStore($storeId);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caisse & Vente Rapide | <?= htmlspecialchars($appName) ?> • <?= htmlspecialchars($currentStoreName) ?></title>
+    <title>Caisse & Vente Rapide | <?= htmlspecialchars($appName) ?> • <?= htmlspecialchars($currentStoreName) ?>
+    </title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -200,17 +201,21 @@ $products = $productModel->getAllByStore($storeId);
         <div class="px-6 py-3 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <a href="dashboard.php" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 rounded-xl bg-white p-1 border border-slate-200 shadow-xs flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-white p-1 border border-slate-200 shadow-xs flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
                         <img src="assets/images/logo.png" alt="POSSIBILITY TECH" class="h-8 w-auto object-contain">
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                        <span class="text-sm sm:text-base font-black tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors uppercase">
+                        <span
+                            class="text-sm sm:text-base font-black tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors uppercase">
                             <?= htmlspecialchars($appName) ?>
                         </span>
                         <div class="flex items-center gap-1.5">
                             <span class="hidden sm:inline text-slate-300 font-light">•</span>
                             <!-- Nom de la Boutique -->
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200 shadow-sm" title="Boutique actuellement active">
+                            <span
+                                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200 shadow-sm"
+                                title="Boutique actuellement active">
                                 <i class="fa-solid fa-shop text-[10px] text-brand-500"></i>
                                 <span><?= htmlspecialchars($currentStoreName) ?></span>
                             </span>
@@ -241,11 +246,9 @@ $products = $productModel->getAllByStore($storeId);
                 </a>
 
                 <?php if (!empty($availableStores) && count($availableStores) > 1): ?>
-                    <select 
-                        onchange="window.location.href = '?switch_store=' + this.value;"
+                    <select onchange="window.location.href = '?switch_store=' + this.value;"
                         class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer transition-colors"
-                        title="Changer de boutique"
-                    >
+                        title="Changer de boutique">
                         <?php foreach ($availableStores as $st): ?>
                             <option value="<?= $st['id'] ?>" <?= ($st['id'] == $currentStoreId) ? 'selected' : '' ?>>
                                 🏪 <?= htmlspecialchars($st['name']) ?>
@@ -260,12 +263,10 @@ $products = $productModel->getAllByStore($storeId);
                 </div>
 
                 <!-- Bouton Déconnexion -->
-                <a 
-                    href="logout.php" 
+                <a href="logout.php"
                     onclick="return confirm('Voulez-vous vous déconnecter de votre espace boutique ?');"
                     class="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 flex items-center justify-center text-xs transition-colors ml-1"
-                    title="Se déconnecter"
-                >
+                    title="Se déconnecter">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 </a>
             </div>
@@ -545,7 +546,8 @@ $products = $productModel->getAllByStore($storeId);
             <!-- Contenu du Reçu / Ticket (Zone imprimable) -->
             <div id="receiptModalContent" class="p-6 overflow-y-auto text-xs font-mono text-slate-800 space-y-4">
                 <div class="text-center border-b border-dashed border-slate-300 pb-3">
-                    <h4 class="font-bold text-sm tracking-wider uppercase font-sans"><?= htmlspecialchars($appName) ?></h4>
+                    <h4 class="font-bold text-sm tracking-wider uppercase font-sans"><?= htmlspecialchars($appName) ?>
+                    </h4>
                     <p class="text-[11px] text-slate-700 font-semibold"><?= htmlspecialchars($currentStoreName) ?></p>
                     <p class="text-[10px] text-slate-400 mt-1">Ticket N° <span id="receiptSaleId"
                             class="font-bold text-slate-700">#0000</span></p>
@@ -1191,6 +1193,46 @@ $products = $productModel->getAllByStore($storeId);
         renderProducts();
         updateCartUI();
     </script>
+
+<!-- Barre de navigation fixe en bas — mobile uniquement -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] z-40 no-print">
+    <div class="grid grid-cols-4 h-16 max-w-lg mx-auto px-2">
+
+        <!-- Onglet 1 : Accueil / Dashboard -->
+        <a href="dashboard.php" class="flex flex-col items-center justify-center py-1 group transition-all text-slate-400 hover:text-slate-700">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-transform active:scale-90">
+                <i class="fa-solid fa-chart-line text-base"></i>
+            </div>
+            <span class="text-[10px] tracking-tight mt-0.5 font-bold">Accueil</span>
+        </a>
+
+        <!-- Onglet 2 : Caisse & Vente (actif) -->
+        <a href="cashier.php" class="flex flex-col items-center justify-center py-1 group transition-all text-brand-600 font-black">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-transform active:scale-90 bg-brand-50 text-brand-600 shadow-xs">
+                <i class="fa-solid fa-cash-register text-base"></i>
+            </div>
+            <span class="text-[10px] tracking-tight mt-0.5 font-bold">Caisse</span>
+        </a>
+
+        <!-- Onglet 3 : Stocks & Produits -->
+        <a href="products.php" class="flex flex-col items-center justify-center py-1 group transition-all text-slate-400 hover:text-slate-700">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-transform active:scale-90">
+                <i class="fa-solid fa-boxes-stacked text-base"></i>
+            </div>
+            <span class="text-[10px] tracking-tight mt-0.5 font-bold">Stocks</span>
+        </a>
+
+        <!-- Onglet 4 : Historique des Ventes -->
+        <a href="sales_history.php" class="flex flex-col items-center justify-center py-1 group transition-all text-slate-400 hover:text-slate-700">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-transform active:scale-90">
+                <i class="fa-solid fa-clock-rotate-left text-base"></i>
+            </div>
+            <span class="text-[10px] tracking-tight mt-0.5 font-bold">Historique</span>
+        </a>
+
+    </div>
+</nav>
+
 </body>
 
 </html>

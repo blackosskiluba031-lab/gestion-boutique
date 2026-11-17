@@ -190,7 +190,7 @@ function fmtMoney(float $amount): string
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
-<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased">
+<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased pb-20 md:pb-0">
 
     <!-- Top Navigation Bar Partagée -->
     <?php

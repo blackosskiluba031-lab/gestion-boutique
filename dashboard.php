@@ -33,8 +33,8 @@ $stmtYesterday = $pdo->prepare("
 $stmtYesterday->execute(['store_id' => $storeId]);
 $yesterdayStats = $stmtYesterday->fetch();
 
-$countToday = (int)$todayStats['count_today'];
-$countYesterday = (int)$yesterdayStats['count_yesterday'];
+$countToday = (int) $todayStats['count_today'];
+$countYesterday = (int) $yesterdayStats['count_yesterday'];
 if ($countYesterday > 0) {
     $todayChangePct = round((($countToday - $countYesterday) / $countYesterday) * 100);
     $todayBadgeText = ($todayChangePct >= 0 ? '+' : '') . $todayChangePct . '%';
@@ -67,10 +67,10 @@ $stmtLastMonth = $pdo->prepare("
       AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
 ");
 $stmtLastMonth->execute(['store_id' => $storeId]);
-$caLastMonth = (float)$stmtLastMonth->fetchColumn();
+$caLastMonth = (float) $stmtLastMonth->fetchColumn();
 
-$caMonth = (float)$monthStats['ca_month'];
-$profitMonth = (float)$monthStats['profit_month'];
+$caMonth = (float) $monthStats['ca_month'];
+$profitMonth = (float) $monthStats['profit_month'];
 
 if ($caLastMonth > 0) {
     $monthChangePct = round((($caMonth - $caLastMonth) / $caLastMonth) * 100);
@@ -83,7 +83,7 @@ if ($caLastMonth > 0) {
 
 // Marge bénéficiaire réelle
 if ($caMonth > 0) {
-    $marginPercent = (int)round(($profitMonth / $caMonth) * 100);
+    $marginPercent = (int) round(($profitMonth / $caMonth) * 100);
     $profitBadgeText = $marginPercent . '% marge';
 } else {
     $profitBadgeText = '0%';
@@ -114,8 +114,8 @@ $stmtStock = $pdo->prepare("
 $stmtStock->execute(['store_id' => $storeId]);
 $stockStats = $stmtStock->fetch();
 
-$totalUnits = (int)$stockStats['total_units'];
-$totalReferences = (int)$stockStats['total_references'];
+$totalUnits = (int) $stockStats['total_units'];
+$totalReferences = (int) $stockStats['total_references'];
 
 // Nombre d'alertes stock
 $stmtAlertsCount = $pdo->prepare("
@@ -124,12 +124,16 @@ $stmtAlertsCount = $pdo->prepare("
     WHERE store_id = :store_id AND stock_quantity <= min_stock_alert
 ");
 $stmtAlertsCount->execute(['store_id' => $storeId]);
-$lowStockCount = (int)$stmtAlertsCount->fetchColumn();
+$lowStockCount = (int) $stmtAlertsCount->fetchColumn();
 
 // Calcul réel du ratio de santé du stock
-$stockHealthPercent = ($totalReferences > 0) 
-    ? max(0, min(100, (int)round((($totalReferences - $lowStockCount) / $totalReferences) * 100))) 
-    : 100;
+if ($totalReferences === 0) {
+    $stockHealthPercent = 0;
+    $stockHealthText = '0 produit';
+} else {
+    $stockHealthPercent = max(0, min(100, (int) round((($totalReferences - $lowStockCount) / $totalReferences) * 100)));
+    $stockHealthText = $lowStockCount > 0 ? $lowStockCount . ' alerte' . ($lowStockCount > 1 ? 's' : '') : 'Optimal';
+}
 
 // ================= 2. DONNÉES GRAPHIQUES (7 DERNIERS JOURS) =================
 $stmtChart7Days = $pdo->prepare("
@@ -185,10 +189,10 @@ $paymentStats = $stmtPayment->fetchAll();
 $paymentLabels = [];
 $paymentAmounts = [];
 $methodNames = [
-    'cash'         => 'Espèces',
+    'cash' => 'Espèces',
     'mobile_money' => 'Mobile Money',
-    'card'         => 'Carte Bancaire',
-    'credit'       => 'Crédit Client'
+    'card' => 'Carte Bancaire',
+    'credit' => 'Crédit Client'
 ];
 
 foreach ($paymentStats as $p) {
@@ -242,12 +246,14 @@ $stmtRecent = $pdo->prepare("
 $stmtRecent->execute(['store_id' => $storeId]);
 $recentSales = $stmtRecent->fetchAll();
 
-function fmtFC(float $amount): string {
+function fmtFC(float $amount): string
+{
     return number_format($amount, 0, ',', ' ') . ' FC';
 }
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="h-full bg-[#f4f7fb]">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -294,6 +300,7 @@ function fmtFC(float $amount): string {
             min-height: 110px;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .mockup-kpi-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 16px 30px -5px rgba(180, 205, 230, 0.6);
@@ -326,6 +333,7 @@ function fmtFC(float $amount): string {
             border: 2px solid rgba(255, 255, 255, 0.9);
             flex-shrink: 0;
         }
+
         .thumb-box img {
             width: 100%;
             height: 100%;
@@ -333,82 +341,94 @@ function fmtFC(float $amount): string {
         }
     </style>
 </head>
-<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased bg-[#f4f7fb]">
+
+<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased bg-[#f4f7fb] pb-20 md:pb-0">
 
     <!-- Top Navigation Bar Partagée avec le Logo Officiel POSSIBILITY TECH -->
-    <?php 
-        $activePage = 'dashboard';
-        require __DIR__ . '/includes/header_nav.php'; 
+    <?php
+    $activePage = 'dashboard';
+    require __DIR__ . '/includes/header_nav.php';
     ?>
 
     <?php if ($trialExpired): ?>
-    <!-- ===================== ÉCRAN DE BLOCAGE PÉRIODE D'ESSAI ===================== -->
-    <div class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
-            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fa-solid fa-clock-rotate-left text-4xl text-red-500"></i>
-            </div>
-            <h2 class="text-xl font-black text-slate-900 mb-2">Période d'essai terminée</h2>
-            <p class="text-sm text-slate-500 mb-6 leading-relaxed">
-                Vos <strong>15 jours d'essai gratuit</strong> sont écoulés.<br>
-                Pour continuer à utiliser <strong>POSSIBILITY TECH</strong> et accéder à votre boutique, veuillez contacter notre équipe pour activer votre abonnement.
-            </p>
+        <!-- ===================== ÉCRAN DE BLOCAGE PÉRIODE D'ESSAI ===================== -->
+        <div class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
+                <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-clock-rotate-left text-4xl text-red-500"></i>
+                </div>
+                <h2 class="text-xl font-black text-slate-900 mb-2">Période d'essai terminée</h2>
+                <p class="text-sm text-slate-500 mb-6 leading-relaxed">
+                    Vos <strong>15 jours d'essai gratuit</strong> sont écoulés.<br>
+                    Pour continuer à utiliser <strong>POSSIBILITY TECH</strong> et accéder à votre boutique, veuillez
+                    contacter notre équipe pour activer votre abonnement.
+                </p>
 
-            <!-- Bouton WhatsApp -->
-            <a href="https://wa.me/<?= $waContact ?>?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20POSSIBILITY%20TECH%20pour%20la%20boutique%20%22<?= urlencode($currentStoreName) ?>%22"
-               target="_blank"
-               class="w-full py-4 px-6 bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-black text-base rounded-2xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-3 transition-all mb-3">
-                <i class="fa-brands fa-whatsapp text-2xl"></i>
-                Payer mon abonnement
-            </a>
-            <p class="text-xs text-slate-400">
-                <i class="fa-solid fa-phone mr-1"></i>WhatsApp : <?= $waContact ?>
-            </p>
-
-            <div class="mt-5 pt-4 border-t border-slate-100">
-                <a href="logout.php" class="text-xs text-slate-400 hover:text-red-600 hover:underline font-semibold">
-                    <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Se déconnecter
+                <!-- Bouton WhatsApp -->
+                <a href="https://wa.me/<?= $waContact ?>?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20POSSIBILITY%20TECH%20pour%20la%20boutique%20%22<?= urlencode($currentStoreName) ?>%22"
+                    target="_blank"
+                    class="w-full py-4 px-6 bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-black text-base rounded-2xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-3 transition-all mb-3">
+                    <i class="fa-brands fa-whatsapp text-2xl"></i>
+                    Payer mon abonnement
                 </a>
+                <p class="text-xs text-slate-400">
+                    <i class="fa-solid fa-phone mr-1"></i>WhatsApp : <?= $waContact ?>
+                </p>
+
+                <div class="mt-5 pt-4 border-t border-slate-100">
+                    <a href="logout.php" class="text-xs text-slate-400 hover:text-red-600 hover:underline font-semibold">
+                        <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Se déconnecter
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
     <?php endif; ?>
 
     <?php if (!$trialExpired && $trialDaysLeft <= 5 && $trialDaysLeft > 0): ?>
-    <!-- ALERTE : Fin de période d'essai imminente -->
-    <div class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2 text-xs font-semibold text-amber-800">
-            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
-            <span>Votre période d'essai expire dans <strong><?= $trialDaysLeft ?> jour<?= $trialDaysLeft > 1 ? 's' : '' ?></strong> !</span>
+        <!-- ALERTE : Fin de période d'essai imminente -->
+        <div class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs font-semibold text-amber-800">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                <span>Votre période d'essai expire dans <strong><?= $trialDaysLeft ?>
+                        jour<?= $trialDaysLeft > 1 ? 's' : '' ?></strong> !</span>
+            </div>
+            <a href="https://wa.me/<?= $waContact ?>?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20POSSIBILITY%20TECH"
+                target="_blank"
+                class="flex-shrink-0 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-black rounded-lg flex items-center gap-1.5 transition-colors">
+                <i class="fa-brands fa-whatsapp"></i> Abonner maintenant
+            </a>
         </div>
-        <a href="https://wa.me/<?= $waContact ?>?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20POSSIBILITY%20TECH"
-           target="_blank"
-           class="flex-shrink-0 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-black rounded-lg flex items-center gap-1.5 transition-colors">
-            <i class="fa-brands fa-whatsapp"></i> Abonner maintenant
-        </a>
-    </div>
     <?php endif; ?>
 
     <!-- Contenu Principal -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8">
 
         <!-- ================= BANNIÈRE D'ACCUEIL BOUTIQUE ================= -->
-        <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <div
+            class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white border border-slate-200 shadow-sm p-1 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    <img src="assets/images/logo_icon.png" alt="POSSIBILITY TECH" class="max-h-full max-w-full object-contain">
+                <div
+                    class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white border border-slate-200 shadow-sm p-1 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img src="assets/images/logo_icon.png" alt="POSSIBILITY TECH"
+                        class="max-h-full max-w-full object-contain">
                 </div>
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-brand-600">Tableau de Bord</span>
+                        <span
+                            class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-brand-600">Tableau
+                            de Bord</span>
                         <?php if (!$trialExpired && $trialEndsAt): ?>
-                        <!-- Compteur essai actif -->
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
-                            <i class="fa-regular fa-clock text-[9px]"></i>
-                            Essai : <strong id="trial-counter"><?= $trialDaysLeft ?>j</strong> restant<?= $trialDaysLeft > 1 ? 's' : '' ?>
-                        </span>
+                            <!-- Compteur essai actif -->
+                            <span
+                                class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                                <i class="fa-regular fa-clock text-[9px]"></i>
+                                Essai : <strong id="trial-counter"><?= $trialDaysLeft ?>j</strong>
+                                restant<?= $trialDaysLeft > 1 ? 's' : '' ?>
+                            </span>
                         <?php endif; ?>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">● Multi-Boutique</span>
+                        <span
+                            class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">●
+                            Multi-Boutique</span>
                     </div>
                     <h1 class="text-lg sm:text-2xl font-black text-slate-900 mt-0.5 leading-tight">
                         <?= htmlspecialchars($currentStoreName) ?>
@@ -419,20 +439,30 @@ function fmtFC(float $amount): string {
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 w-full sm:w-auto">
+            <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
                 <a href="cashier.php"
-                    class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all active:scale-[0.98]">
+                    class="col-span-2 sm:col-span-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all active:scale-[0.98]">
                     <i class="fa-solid fa-cash-register"></i>
                     <span>Caisse & Vente</span>
                 </a>
-                <?php if (!$trialExpired): ?>
-                <a href="https://wa.me/<?= $waContact ?>?text=Bonjour%2C%20abonnement%20POSSIBILITY%20TECH"
-                   target="_blank"
-                   class="flex-shrink-0 p-2.5 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-2xl flex items-center gap-1.5 transition-colors"
-                   title="Contacter sur WhatsApp">
-                    <i class="fa-brands fa-whatsapp text-base"></i>
-                    <span class="text-xs font-bold hidden sm:inline">Abonnement</span>
+                <a href="products.php"
+                    class="px-3 py-2.5 bg-blue-50 hover:bg-blue-100 text-brand-700 border border-blue-200 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]">
+                    <i class="fa-solid fa-boxes-stacked text-brand-600"></i>
+                    <span>Stocks</span>
                 </a>
+                <a href="sales_history.php"
+                    class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]">
+                    <i class="fa-solid fa-clock-rotate-left text-slate-600"></i>
+                    <span>Historique</span>
+                </a>
+                <?php if (!$trialExpired): ?>
+                    <a href="https://wa.me/<?= $waContact ?>?text=Bonjour%2C%20abonnement%20POSSIBILITY%20TECH"
+                        target="_blank"
+                        class="col-span-2 sm:col-span-1 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-2xl flex items-center justify-center gap-1.5 transition-colors"
+                        title="Contacter sur WhatsApp">
+                        <i class="fa-brands fa-whatsapp text-base text-green-600"></i>
+                        <span class="text-xs font-bold">WhatsApp</span>
+                    </a>
                 <?php endif; ?>
             </div>
         </div>
@@ -440,7 +470,7 @@ function fmtFC(float $amount): string {
 
         <!-- ================= LIGNE 1 : LES 5 CARTES KPIS CONFORMES À L'IMAGE 1 ================= -->
         <section class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
-            
+
             <!-- CARTE 1 : Clients inscrits (Bleu avec vague et badge pill dynamique) -->
             <div class="mockup-kpi-card">
                 <!-- SVG Wave Bleu -->
@@ -451,12 +481,13 @@ function fmtFC(float $amount): string {
                             <stop offset="100%" stop-color="#38bdf8" />
                         </linearGradient>
                     </defs>
-                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveBlue)"/>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveBlue)" />
                 </svg>
 
                 <!-- Miniature exacte conforme à l'Image 1 (Casque jaune de chantier) -->
                 <div class="thumb-box">
-                    <img src="assets/images/kpi_thumb_1.png" alt="Clients inscrits" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <img src="assets/images/kpi_thumb_1.png" alt="Clients inscrits"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <i class="fa-solid fa-users text-blue-600 text-2xl hidden"></i>
                 </div>
 
@@ -467,7 +498,8 @@ function fmtFC(float $amount): string {
                         <?= number_format($countToday, 0, ',', ' ') ?>
                     </strong>
                     <div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#0062ff] text-white shadow-xs">
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#0062ff] text-white shadow-xs">
                             <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i><?= htmlspecialchars($todayBadgeText) ?>
                         </span>
                     </div>
@@ -483,12 +515,14 @@ function fmtFC(float $amount): string {
                             <stop offset="100%" stop-color="#34d399" />
                         </linearGradient>
                     </defs>
-                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveGreen)"/>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z"
+                        fill="url(#waveGreen)" />
                 </svg>
 
                 <!-- Miniature exacte conforme à l'Image 1 (Briques sur palette) -->
                 <div class="thumb-box">
-                    <img src="assets/images/kpi_thumb_2.png" alt="Produits en stock" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <img src="assets/images/kpi_thumb_2.png" alt="Produits en stock"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <i class="fa-solid fa-cubes-stacked text-emerald-600 text-2xl hidden"></i>
                 </div>
 
@@ -498,7 +532,8 @@ function fmtFC(float $amount): string {
                         <?= number_format($totalUnits, 0, ',', ' ') ?>
                     </strong>
                     <div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#00c853] text-white shadow-xs">
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#00c853] text-white shadow-xs">
                             <i class="fa-solid fa-layer-group mr-1 text-[9px]"></i><?= $totalReferences ?> réf.
                         </span>
                     </div>
@@ -514,22 +549,26 @@ function fmtFC(float $amount): string {
                             <stop offset="100%" stop-color="#fb923c" />
                         </linearGradient>
                     </defs>
-                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveOrange)"/>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z"
+                        fill="url(#waveOrange)" />
                 </svg>
 
                 <!-- Miniature exacte conforme à l'Image 1 (Camion benne) -->
                 <div class="thumb-box">
-                    <img src="assets/images/kpi_thumb_3.png" alt="Ventes ce mois" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <img src="assets/images/kpi_thumb_3.png" alt="Ventes ce mois"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <i class="fa-solid fa-truck-fast text-orange-600 text-2xl hidden"></i>
                 </div>
 
                 <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
                     <span class="text-xs font-bold text-slate-700 block truncate">Ventes ce mois</span>
-                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate" title="<?= fmtFC($caMonth) ?>">
+                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate"
+                        title="<?= fmtFC($caMonth) ?>">
                         <?= fmtFC($caMonth) ?>
                     </strong>
                     <div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#ff6d00] text-white shadow-xs">
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#ff6d00] text-white shadow-xs">
                             <i class="fa-solid fa-arrow-up mr-1 text-[9px]"></i><?= htmlspecialchars($monthBadgeText) ?>
                         </span>
                     </div>
@@ -545,23 +584,28 @@ function fmtFC(float $amount): string {
                             <stop offset="100%" stop-color="#c084fc" />
                         </linearGradient>
                     </defs>
-                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#wavePurple)"/>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z"
+                        fill="url(#wavePurple)" />
                 </svg>
 
                 <!-- Miniature exacte conforme à l'Image 1 (Sacs de ciment) -->
                 <div class="thumb-box">
-                    <img src="assets/images/kpi_thumb_4.png" alt="Bénéfice estimé" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <img src="assets/images/kpi_thumb_4.png" alt="Bénéfice estimé"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <i class="fa-solid fa-sack-dollar text-purple-600 text-2xl hidden"></i>
                 </div>
 
                 <div class="relative z-10 flex-1 pl-3 pr-3 py-2 min-w-0">
                     <span class="text-xs font-bold text-slate-700 block truncate">Bénéfice estimé</span>
-                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate" title="<?= fmtFC($profitMonth) ?>">
+                    <strong class="text-xl font-black text-slate-900 block my-0.5 tracking-tight truncate"
+                        title="<?= fmtFC($profitMonth) ?>">
                         <?= fmtFC($profitMonth) ?>
                     </strong>
                     <div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#7c3aed] text-white shadow-xs">
-                            <i class="fa-solid fa-chart-line mr-1 text-[9px]"></i><?= htmlspecialchars($profitBadgeText) ?>
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-[#7c3aed] text-white shadow-xs">
+                            <i
+                                class="fa-solid fa-chart-line mr-1 text-[9px]"></i><?= htmlspecialchars($profitBadgeText) ?>
                         </span>
                     </div>
                 </div>
@@ -576,12 +620,13 @@ function fmtFC(float $amount): string {
                             <stop offset="100%" stop-color="#38bdf8" />
                         </linearGradient>
                     </defs>
-                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveCyan)"/>
+                    <path d="M0,0 L115,0 C145,28 155,50 135,78 C118,98 105,104 85,110 L0,110 Z" fill="url(#waveCyan)" />
                 </svg>
 
                 <!-- Miniature exacte conforme à l'Image 1 (Camion de livraison blanc) -->
                 <div class="thumb-box">
-                    <img src="assets/images/kpi_thumb_5.png" alt="Santé du stock" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <img src="assets/images/kpi_thumb_5.png" alt="Santé du stock"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <i class="fa-solid fa-truck text-cyan-600 text-2xl hidden"></i>
                 </div>
 
@@ -592,24 +637,25 @@ function fmtFC(float $amount): string {
                     </strong>
                     <div class="flex items-center gap-2 mt-1">
                         <div class="flex-1 bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                            <div class="h-full bg-[#00b4d8] rounded-full transition-all duration-500" style="width: <?= $stockHealthPercent ?>%"></div>
+                            <div class="h-full bg-[#00b4d8] rounded-full transition-all duration-500"
+                                style="width: <?= $stockHealthPercent ?>%"></div>
                         </div>
-                        <span class="text-xs font-bold text-[#00b4d8] whitespace-nowrap"><?= $lowStockCount > 0 ? $lowStockCount . ' alerte' . ($lowStockCount > 1 ? 's' : '') : 'OK' ?></span>
+                        <span class="text-xs font-bold text-[#00b4d8] whitespace-nowrap"><?= $stockHealthText ?></span>
                     </div>
                 </div>
             </div>
 
         </section>
 
-        </section>
-
 
         <!-- ================= LIGNE 2 : ANALYSE DES VENTES & RÉPARTITIONS (CHART.JS) ================= -->
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             <!-- Graphique Courbe d'Évolution (2/3 largeur) -->
-            <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm flex flex-col justify-between">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+            <div
+                class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm flex flex-col justify-between">
+                <div
+                    class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">Évolution des Ventes & Bénéfices</h2>
                         <p class="text-xs text-slate-400">Performances quotidiennes sur les 7 derniers jours</p>
@@ -650,8 +696,10 @@ function fmtFC(float $amount): string {
                     <?php else: ?>
                         <?php foreach ($paymentStats as $p): ?>
                             <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <span class="text-slate-400 block text-[10px]"><?= htmlspecialchars($methodNames[$p['payment_method']] ?? $p['payment_method']) ?></span>
-                                <strong class="text-slate-800 text-xs font-mono font-bold"><?= fmtFC((float)$p['total_amount']) ?></strong>
+                                <span
+                                    class="text-slate-400 block text-[10px]"><?= htmlspecialchars($methodNames[$p['payment_method']] ?? $p['payment_method']) ?></span>
+                                <strong
+                                    class="text-slate-800 text-xs font-mono font-bold"><?= fmtFC((float) $p['total_amount']) ?></strong>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -671,7 +719,8 @@ function fmtFC(float $amount): string {
                         <h2 class="text-base font-bold text-slate-900">Top 5 Ventes</h2>
                         <p class="text-xs text-slate-400">Articles les plus demandés</p>
                     </div>
-                    <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xs shadow-xs">
+                    <span
+                        class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xs shadow-xs">
                         <i class="fa-solid fa-trophy"></i>
                     </span>
                 </div>
@@ -688,7 +737,8 @@ function fmtFC(float $amount): string {
                         <h2 class="text-base font-bold text-slate-900">Alertes Réappro</h2>
                         <p class="text-xs text-slate-400">Stock sous le seuil d'alerte</p>
                     </div>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold <?= count($lowStockProducts) > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' ?>">
+                    <span
+                        class="px-2.5 py-0.5 rounded-full text-xs font-bold <?= count($lowStockProducts) > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' ?>">
                         <?= count($lowStockProducts) ?> alerte(s)
                     </span>
                 </div>
@@ -702,24 +752,27 @@ function fmtFC(float $amount): string {
                         </div>
                     <?php else: ?>
                         <?php foreach ($lowStockProducts as $p): ?>
-                            <?php 
-                                $isZero = $p['stock_quantity'] <= 0;
-                                $percent = $p['min_stock_alert'] > 0 ? min(100, round(($p['stock_quantity'] / $p['min_stock_alert']) * 100)) : 0;
+                            <?php
+                            $isZero = $p['stock_quantity'] <= 0;
+                            $percent = $p['min_stock_alert'] > 0 ? min(100, round(($p['stock_quantity'] / $p['min_stock_alert']) * 100)) : 0;
                             ?>
                             <div class="pt-2 flex items-center justify-between">
                                 <div class="min-w-0 pr-2">
-                                    <h4 class="text-xs font-bold text-slate-800 truncate" title="<?= htmlspecialchars($p['name']) ?>">
+                                    <h4 class="text-xs font-bold text-slate-800 truncate"
+                                        title="<?= htmlspecialchars($p['name']) ?>">
                                         <?= htmlspecialchars($p['name']) ?>
                                     </h4>
                                     <div class="flex items-center gap-2 mt-1">
                                         <div class="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                            <div class="h-full <?= $isZero ? 'bg-red-600' : 'bg-amber-500' ?>" style="width: <?= $percent ?>%"></div>
+                                            <div class="h-full <?= $isZero ? 'bg-red-600' : 'bg-amber-500' ?>"
+                                                style="width: <?= $percent ?>%"></div>
                                         </div>
                                         <span class="text-[10px] text-slate-400">Seuil: <?= $p['min_stock_alert'] ?></span>
                                     </div>
                                 </div>
                                 <div class="text-right flex-shrink-0">
-                                    <span class="px-2 py-0.5 rounded-md text-[11px] font-bold <?= $isZero ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800' ?>">
+                                    <span
+                                        class="px-2 py-0.5 rounded-md text-[11px] font-bold <?= $isZero ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800' ?>">
                                         <?= $p['stock_quantity'] ?> restant(s)
                                     </span>
                                 </div>
@@ -736,7 +789,8 @@ function fmtFC(float $amount): string {
                         <h2 class="text-base font-bold text-slate-900">Dernières Ventes</h2>
                         <p class="text-xs text-slate-400">Transactions récentes</p>
                     </div>
-                    <a href="sales_history.php" class="text-xs text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1">
+                    <a href="sales_history.php"
+                        class="text-xs text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1">
                         <span>Journal</span>
                         <i class="fa-solid fa-arrow-right text-[10px]"></i>
                     </a>
@@ -752,20 +806,24 @@ function fmtFC(float $amount): string {
                         <?php foreach ($recentSales as $sale): ?>
                             <div class="pt-2 flex items-center justify-between text-xs">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-mono font-bold">
-                                        #<?= str_pad((string)$sale['id'], 3, '0', STR_PAD_LEFT) ?>
+                                    <div
+                                        class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-mono font-bold">
+                                        #<?= str_pad((string) $sale['id'], 3, '0', STR_PAD_LEFT) ?>
                                     </div>
                                     <div>
-                                        <span class="font-bold text-slate-800 block"><?= fmtFC((float)$sale['total_amount']) ?></span>
-                                        <span class="text-[10px] text-slate-400"><?= date('d/m/Y H:i', strtotime($sale['created_at'])) ?></span>
+                                        <span
+                                            class="font-bold text-slate-800 block"><?= fmtFC((float) $sale['total_amount']) ?></span>
+                                        <span
+                                            class="text-[10px] text-slate-400"><?= date('d/m/Y H:i', strtotime($sale['created_at'])) ?></span>
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 uppercase">
+                                    <span
+                                        class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 uppercase">
                                         <?= htmlspecialchars($methodNames[$sale['payment_method']] ?? $sale['payment_method']) ?>
                                     </span>
                                     <span class="block text-[10px] text-emerald-600 font-bold mt-0.5">
-                                        +<?= fmtFC((float)$sale['total_profit']) ?>
+                                        +<?= fmtFC((float) $sale['total_profit']) ?>
                                     </span>
                                 </div>
                             </div>
@@ -783,7 +841,8 @@ function fmtFC(float $amount): string {
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <div class="flex items-center gap-2">
                 <img src="assets/images/logo.png" alt="Logo" class="h-5 w-auto">
-                <p>&copy; <?= date('Y') ?> <strong><?= htmlspecialchars($appName) ?></strong> • Espace : <?= htmlspecialchars($currentStoreName) ?></p>
+                <p>&copy; <?= date('Y') ?> <strong><?= htmlspecialchars($appName) ?></strong> • Espace :
+                    <?= htmlspecialchars($currentStoreName) ?></p>
             </div>
             <p class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -860,7 +919,7 @@ function fmtFC(float $amount): string {
                         padding: 12,
                         cornerRadius: 8,
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 return context.dataset.label + ': ' + new Intl.NumberFormat('fr-FR').format(context.raw) + ' FC';
                             }
                         }
@@ -871,7 +930,7 @@ function fmtFC(float $amount): string {
                         beginAtZero: true,
                         grid: { color: '#f1f5f9' },
                         ticks: {
-                            callback: function(val) {
+                            callback: function (val) {
                                 return val >= 1000 ? (val / 1000) + 'k' : val;
                             }
                         }
@@ -934,4 +993,5 @@ function fmtFC(float $amount): string {
         });
     </script>
 </body>
+
 </html>

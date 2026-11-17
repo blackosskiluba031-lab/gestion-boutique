@@ -153,7 +153,7 @@ function fmtMoney(float $amount): string {
         }
     </style>
 </head>
-<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased">
+<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased pb-20 md:pb-0">
 
     <!-- Top Navigation Bar Partagée -->
     <?php 

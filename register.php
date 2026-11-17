@@ -36,17 +36,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         try {
             $newStoreId = $storeModel->register($name, $username, $password, $phone, $address, $email);
 
-            // Produits starter
-            $starterProducts = [
-                [$newStoreId, 1, 'Produit Exemple A', '4000000000001', 1000.00, 1500.00, 20, 5],
-                [$newStoreId, 1, 'Produit Exemple B', '4000000000002', 2000.00, 3000.00, 15, 5],
-                [$newStoreId, 2, 'Article Hygiène X', '4000000000003',  800.00, 1200.00, 30, 8],
-                [$newStoreId, 3, 'Boisson Rafraîchissante', '4000000000004', 500.00, 800.00, 50, 10],
-            ];
-            foreach ($starterProducts as $sp) {
-                $productModel->create($sp[0], $sp[1], $sp[2], $sp[3], $sp[4], $sp[5], $sp[6], $sp[7]);
-            }
-
             $_SESSION['current_store_id'] = $newStoreId;
             $_SESSION['store_name']       = $name;
             $_SESSION['store_username']   = $username;
