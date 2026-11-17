@@ -49,8 +49,10 @@ if ($isTiDB) {
     $caPaths = [
         getenv('TIDB_CA_PATH'),
         getenv('MYSQL_ATTR_SSL_CA'),
-        '/etc/ssl/certs/ca-certificates.crt', // Debian / Ubuntu / Docker officiel
+        '/etc/ssl/certs/ca-certificates.crt', // Debian / Ubuntu / Docker officiel sur Render
         '/etc/pki/tls/certs/ca-bundle.crt',   // CentOS / RHEL
+        'C:\laragon\etc\ssl\cacert.pem',
+        'C:\laragon\bin\git\mingw64\etc\ssl\cert.pem',
         'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\extras\ssl\cacert.pem'
     ];
 
